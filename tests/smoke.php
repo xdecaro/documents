@@ -24,8 +24,12 @@ if (strpos($storage, 'dirname(JPATH_ROOT)') === false || strpos($storage, 'is_up
 }
 
 $core = file_get_contents($root . '/component/admin/src/Helper/CoreUiHelper.php');
-if (strpos($core, 'AssetService') === false || strpos($core, "'1.1.0'") === false) {
+if (strpos($core, 'xdecaro\\Core\\Asset\\AssetService') === false || strpos($core, "'1.3.0'") === false) {
     fwrite(STDERR, "Core UI baseline missing\n");
+    exit(1);
+}
+if (strpos($core, 'Xdecaro\\Core\\') !== false) {
+    fwrite(STDERR, "Legacy Core namespace remains\n");
     exit(1);
 }
 

@@ -6,7 +6,7 @@ use Joomla\Database\DatabaseInterface;
 
 final class PkgDecarodocumentsInstallerScript
 {
-    private const MINIMUM_CORE = '1.1.0';
+    private const MINIMUM_CORE = '1.3.0';
 
     public function preflight($type, $parent): bool
     {
@@ -29,8 +29,8 @@ final class PkgDecarodocumentsInstallerScript
 
     private function getInstalledCoreVersion(): string
     {
-        if (class_exists(\Xdecaro\Core\Version::class)) {
-            return trim((string) \Xdecaro\Core\Version::VERSION);
+        if (class_exists(\xdecaro\Core\Version::class)) {
+            return trim((string) \xdecaro\Core\Version::VERSION);
         }
 
         try {

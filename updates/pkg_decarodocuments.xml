@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <updates>
   <update>
     <name>Documents by xdecaro</name>
@@ -6,14 +6,12 @@
     <element>pkg_decarodocuments</element>
     <type>package</type>
     <client>site</client>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <downloads>
-      <downloadurl type="full" format="zip">https://github.com/xdecaro/documents/releases/download/v1.0.0/pkg_decarodocuments_1.0.0.zip</downloadurl>
+      <downloadurl type="full" format="zip">https://github.com/xdecaro/documents/releases/download/v1.1.0/pkg_decarodocuments_1.1.0.zip</downloadurl>
     </downloads>
-    <tags>
-      <tag>stable</tag>
-    </tags>
-    <sha256>77bbd9b1d09ed83e7f72a5ab88f85f3e7944ae05e8e1a891c1a3744b330dd5e7</sha256>
+    <tags><tag>stable</tag></tags>
+    <sha256>0000000000000000000000000000000000000000000000000000000000000000</sha256>
     <maintainer>Luca De Caro</maintainer>
     <maintainerurl>https://github.com/xdecaro/documents</maintainerurl>
     <targetplatform name="joomla" version="(5|6)\.[0-9]+" />

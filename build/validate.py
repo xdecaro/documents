@@ -22,8 +22,8 @@ def xml_version(path: Path) -> str:
 
 
 def validate_source() -> None:
-    if VERSION != '1.0.0':
-        fail(f'Unexpected initial version {VERSION!r}')
+    if VERSION != '1.1.0':
+        fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
     package = ROOT / 'package/pkg_decarodocuments.xml'
@@ -61,10 +61,12 @@ def validate_source() -> None:
         'component/admin/services/provider.php',
         'component/admin/sql/install.mysql.utf8mb4.sql',
         'component/admin/sql/updates/mysql/1.0.0.sql',
+        'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/src/Controller/DocumentController.php',
         'component/admin/src/Helper/CoreUiHelper.php',
         'component/admin/src/Model/DocumentModel.php',
         'component/admin/src/Model/DocumentsModel.php',
+        'component/admin/src/Model/InformationModel.php',
         'component/admin/src/Service/CoreIntegrationService.php',
         'component/admin/src/Service/StorageService.php',
         'component/admin/src/Table/DocumentTable.php',
@@ -78,17 +80,23 @@ def validate_source() -> None:
             fail(f'Missing required source file {rel}')
 
     if (ROOT / 'component/media').exists():
-        fail('Documents 1.0.0 must not introduce a duplicate local design system/media bundle')
+        fail('Documents must not introduce a duplicate local design system/media bundle')
 
     package_script = (ROOT / 'package/script.php').read_text(encoding='utf-8')
-    for marker in ('MINIMUM_CORE', "'1.1.0'", 'pkg_xdecarocore'):
+    for marker in ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version'):
         if marker not in package_script:
             fail(f'Core dependency guard missing {marker}')
 
     core_helper = (ROOT / 'component/admin/src/Helper/CoreUiHelper.php').read_text(encoding='utf-8')
-    for marker in ('Xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.1.0'"):
+    for marker in ('xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.3.0'"):
         if marker not in core_helper:
             fail(f'Core UI integration missing {marker}')
+
+    info = (ROOT / 'component/admin/src/Model/InformationModel.php').read_text(encoding='utf-8')
+    relation = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
+    for text, label in ((package_script, 'package installer'), (core_helper, 'Core UI helper'), (info, 'Information model'), (relation, 'Core relation adapter')):
+        if re.search(r'Xdecaro\\+Core', text):
+            fail(f'Legacy Core namespace remains in {label}')
 
     storage = (ROOT / 'component/admin/src/Service/StorageService.php').read_text(encoding='utf-8')
     for marker in ('dirname(JPATH_ROOT)', 'is_uploaded_file', 'FILEINFO_MIME_TYPE', 'move_uploaded_file', "hash_file('sha256'", 'MAX_FILE_SIZE'):
@@ -124,8 +132,7 @@ def validate_source() -> None:
     if 'DROP TABLE' in sql.upper():
         fail('Install/update SQL must not drop tables')
 
-    relation = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
-    for marker in ("COMPONENT = 'com_decarodocuments'", 'EntityReference', 'RelationReference'):
+    for marker in ("COMPONENT = 'com_decarodocuments'", "MINIMUM_CORE = '1.3.0'", 'xdecaro\\Core\\Integration\\EntityReference', 'xdecaro\\Core\\Integration\\RelationReference'):
         if marker not in relation:
             fail(f'Core relation adapter missing {marker}')
 

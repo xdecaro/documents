@@ -12,21 +12,21 @@ defined('_JEXEC') or die;
 final class CoreIntegrationService
 {
     public const COMPONENT = 'com_decarodocuments';
-    public const MINIMUM_CORE = '1.1.0';
+    public const MINIMUM_CORE = '1.3.0';
 
     public function isAvailable(): bool
     {
-        return class_exists(\Xdecaro\Core\Version::class)
-            && version_compare((string) \Xdecaro\Core\Version::VERSION, self::MINIMUM_CORE, '>=')
-            && class_exists(\Xdecaro\Core\Integration\EntityReference::class)
-            && class_exists(\Xdecaro\Core\Integration\RelationReference::class);
+        return class_exists(\xdecaro\Core\Version::class)
+            && version_compare((string) \xdecaro\Core\Version::VERSION, self::MINIMUM_CORE, '>=')
+            && class_exists(\xdecaro\Core\Integration\EntityReference::class)
+            && class_exists(\xdecaro\Core\Integration\RelationReference::class);
     }
 
     public function createDocumentReference(int|string $id): object
     {
         $this->assertAvailable();
 
-        return new \Xdecaro\Core\Integration\EntityReference(self::COMPONENT, 'document', $id);
+        return new \xdecaro\Core\Integration\EntityReference(self::COMPONENT, 'document', $id);
     }
 
     public function createRelation(
@@ -38,9 +38,9 @@ final class CoreIntegrationService
     ): object {
         $this->assertAvailable();
 
-        return new \Xdecaro\Core\Integration\RelationReference(
+        return new \xdecaro\Core\Integration\RelationReference(
             $this->createDocumentReference($documentId),
-            new \Xdecaro\Core\Integration\EntityReference($targetComponent, $targetEntity, $targetId),
+            new \xdecaro\Core\Integration\EntityReference($targetComponent, $targetEntity, $targetId),
             $relationType
         );
     }
@@ -49,7 +49,7 @@ final class CoreIntegrationService
     {
         if (!$this->isAvailable()) {
             throw new \RuntimeException(
-                'Core by xdecaro 1.1.0 or later is required for Documents integration.'
+                'Core by xdecaro 1.3.0 or later is required for Documents integration.'
             );
         }
     }

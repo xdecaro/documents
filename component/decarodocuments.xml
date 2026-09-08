@@ -6,7 +6,7 @@
   <copyright>Copyright (C) 2026 Luca De Caro. All rights reserved.</copyright>
   <license>GNU General Public License version 2 or later</license>
   <authorUrl>https://github.com/xdecaro/documents</authorUrl>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <description>COM_DECARODOCUMENTS_XML_DESCRIPTION</description>
   <targetplatform name="joomla" version="(5|6).*" />
   <namespace path="src">Xdecaro\Component\Decarodocuments</namespace>

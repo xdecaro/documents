@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 - 2026-09-09
+
+- Migrated all Core API consumption to the canonical `xdecaro\Core` namespace introduced by Core 1.3.0.
+- Raised the existing mandatory Core dependency from 1.1.0+ to 1.3.0+ in installer preflight, UI integration, diagnostics and relation adapter.
+- Preserved `com_decarodocuments`, `pkg_decarodocuments`, `Xdecaro\Component\Decarodocuments` and `#__decarodocuments_*`.
+- No database schema or document-domain behavior changes; 1.1.0 SQL is a Joomla schema-version marker only.
+
 ## 1.0.0 - 2026-09-08
 
 - First stable installable Documents by xdecaro package.
