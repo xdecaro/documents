@@ -1,0 +1,33 @@
+name: Documents CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    strategy:
+      matrix:
+        php: ['8.1', '8.3']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: PHP syntax
+        run: find component package tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: XML and release metadata
+        run: python3 build/validate.py
+      - name: Smoke
+        run: php tests/smoke.php
+      - name: Deterministic build A
+        run: python3 build/build.py && cp dist/SHA256SUMS.txt /tmp/documents-a.txt
+      - name: Package validation
+        run: python3 build/validate.py --dist
+      - name: Deterministic build B
+        run: python3 build/build.py && diff -u /tmp/documents-a.txt dist/SHA256SUMS.txt

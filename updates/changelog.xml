@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<changelogs>
+  <changelog>
+    <element>pkg_decarodocuments</element>
+    <type>package</type>
+    <version>1.0.0</version>
+    <note>First stable Documents by xdecaro release with secure private storage, administrator CRUD, Core by xdecaro 1.1+ UI integration and cross-product relation storage.</note>
+  </changelog>
+</changelogs>

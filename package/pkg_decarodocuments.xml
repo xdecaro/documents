@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="package" method="upgrade">
+  <name>PKG_DECARODOCUMENTS</name>
+  <packagename>decarodocuments</packagename>
+  <version>1.0.0</version>
+  <creationDate>2026-09</creationDate>
+  <author>Luca De Caro</author>
+  <authorUrl>https://github.com/xdecaro/documents</authorUrl>
+  <copyright>Copyright (C) 2026 Luca De Caro. All rights reserved.</copyright>
+  <license>GNU General Public License version 2 or later</license>
+  <description>Documents by xdecaro package.</description>
+  <targetplatform name="joomla" version="(5|6).*" />
+  <scriptfile>script.php</scriptfile>
+
+  <files>
+    <file type="component" id="com_decarodocuments">com_decarodocuments.zip</file>
+  </files>
+
+  <updateservers>
+    <server type="extension" priority="1" name="Documents by xdecaro Updates">https://raw.githubusercontent.com/xdecaro/documents/main/updates/pkg_decarodocuments.xml</server>
+  </updateservers>
+</extension>

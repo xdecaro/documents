@@ -1,0 +1,2 @@
+-- Documents by xdecaro 1.0.0 initial schema is created by install.mysql.utf8mb4.sql.
+-- This marker keeps Joomla schema metadata aligned for the first stable release.

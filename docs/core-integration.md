@@ -1,34 +1,33 @@
-# Xdecaro Core integration
+# Core by xdecaro integration
 
-Documents uses the Xdecaro Core cross-product reference contract to associate managed documents with entities owned by Forms, Courses, Competitions, Membership, Events and future Xdecaro products.
+Documents by xdecaro 1.0.0 establishes the stable Joomla identifiers:
 
-Current integration baseline: Xdecaro Core `1.0.0+`.
+- component: `com_decarodocuments`;
+- package: `pkg_decarodocuments`.
 
-The repository does not yet contain the installable Documents component. When implementation starts, add one small Documents-owned runtime adapter registered through Joomla dependency injection. It must check for the public Core classes before use and return a controlled administrator message when optional Core integration is unavailable. Do not copy Core classes into Documents.
+Core by xdecaro `1.1.0+` is a mandatory runtime dependency for Documents 1.0.0. The package installer checks the installed Core version before install/update and fails with a controlled administrator message when the dependency is missing or too old.
 
-Documents must not invent its Joomla component element from the repository name. The first real component manifest must define the stable installed element; from that point cross-product references must use that exact identifier.
+Documents uses Core only for genuinely shared infrastructure:
 
-Use:
+- `Xdecaro\Core\Asset\AssetService` for opt-in administrator Web Asset Manager styles;
+- `.xdecaro-scope` and Core UI primitives;
+- `Xdecaro\Core\Integration\EntityReference`;
+- `Xdecaro\Core\Integration\RelationReference`.
 
-- `Xdecaro\Core\Integration\EntityReference` for `component/entity/id` references;
-- `Xdecaro\Core\Integration\RelationReference` for typed links between references.
+Documents does **not** copy Core CSS or JS into its package.
 
-Documents remains the owner of document records, files, versions, document access, confidentiality, expiry/retention, previews/downloads and document lifecycle.
+Documents remains owner of:
 
-Typical integrations include:
+- document records and stable UUIDs;
+- uploaded files and private storage;
+- document MIME/type validation;
+- file hashes and size metadata;
+- document access levels and lifecycle state;
+- relationships between documents and external entities;
+- document-specific authorization and downloads.
 
-- document -> Forms form or submission;
-- document -> Courses course, edition or enrollment;
-- document -> Competitions participant, team, season, match or another published Competitions entity, using component element `com_decarodcl`;
-- document -> Membership member, application or renewal;
-- document -> Events event or registration after Events publishes its stable API.
+The `#__decarodocuments_relations` table stores target references as `component/entity/id/relation type` values. It deliberately has no foreign keys to Forms, Courses, Competitions, Membership, Events or other independent components. The only foreign key is from a relation to its owning Documents record.
 
-The consuming product decides why a document is required and how it affects its workflow. Documents decides how the document itself is stored, secured, versioned and exposed.
+For Competitions, the stable target component identifier remains `com_decarodcl`.
 
-Do not use raw filesystem paths or another product's private table IDs as an undocumented integration protocol. Prefer stable document IDs plus Core EntityReference values and the Documents public API.
-
-Do not make Forms, Courses, Competitions, Membership or Events mandatory dependencies simply because Documents can integrate with them. Optional integrations must fail gracefully.
-
-Core remains optional until the Documents package deliberately declares and enforces it as a mandatory dependency. That decision must update manifests, installer/update behavior, documentation and tests together.
-
-Because Documents starts from the 1.0.0 stable line, published entity/reference/API contracts must be changed conservatively according to Semantic Versioning.
+Future public Documents services may expose stable document IDs/UUIDs and relation operations. Consumers must not store private filesystem paths or directly depend on Documents internal storage filenames.

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" method="upgrade">
+  <name>COM_DECARODOCUMENTS</name>
+  <author>Luca De Caro</author>
+  <creationDate>2026-09</creationDate>
+  <copyright>Copyright (C) 2026 Luca De Caro. All rights reserved.</copyright>
+  <license>GNU General Public License version 2 or later</license>
+  <authorUrl>https://github.com/xdecaro/documents</authorUrl>
+  <version>1.0.0</version>
+  <description>COM_DECARODOCUMENTS_XML_DESCRIPTION</description>
+  <targetplatform name="joomla" version="(5|6).*" />
+  <namespace path="src">Xdecaro\Component\Decarodocuments</namespace>
+
+  <administration>
+    <menu img="class:folder-open">COM_DECARODOCUMENTS</menu>
+    <submenu>
+      <menu view="documents">COM_DECARODOCUMENTS_DOCUMENTS</menu>
+      <menu view="information">COM_DECARODOCUMENTS_INFORMATION</menu>
+    </submenu>
+    <files folder="admin">
+      <filename>access.xml</filename>
+      <filename>config.xml</filename>
+      <folder>forms</folder>
+      <folder>services</folder>
+      <folder>sql</folder>
+      <folder>src</folder>
+      <folder>tmpl</folder>
+    </files>
+    <languages folder="admin/language">
+      <language tag="en-GB">en-GB/com_decarodocuments.ini</language>
+      <language tag="en-GB">en-GB/com_decarodocuments.sys.ini</language>
+      <language tag="it-IT">it-IT/com_decarodocuments.ini</language>
+      <language tag="it-IT">it-IT/com_decarodocuments.sys.ini</language>
+    </languages>
+  </administration>
+
+  <install>
+    <sql>
+      <file driver="mysql" charset="utf8mb4">sql/install.mysql.utf8mb4.sql</file>
+    </sql>
+  </install>
+
+  <update>
+    <schemas>
+      <schemapath type="mysql">sql/updates/mysql</schemapath>
+    </schemas>
+  </update>
+</extension>

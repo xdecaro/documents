@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <fieldset name="details" label="COM_DECARODOCUMENTS_DOCUMENT_DETAILS">
+    <field name="id" type="hidden" />
+    <field name="uuid" type="hidden" />
+    <field name="title" type="text" label="COM_DECARODOCUMENTS_FIELD_TITLE" required="true" maxlength="255" filter="string" />
+    <field name="description" type="textarea" label="COM_DECARODOCUMENTS_FIELD_DESCRIPTION" rows="6" filter="safehtml" />
+    <field name="upload" type="file" label="COM_DECARODOCUMENTS_FIELD_FILE" description="COM_DECARODOCUMENTS_FIELD_FILE_DESC" accept=".pdf,.jpg,.jpeg,.png,.txt,.csv,.docx,.xlsx,.odt,.ods" />
+    <field name="state" type="list" label="JSTATUS" default="1" filter="integer">
+      <option value="1">JPUBLISHED</option>
+      <option value="0">JUNPUBLISHED</option>
+      <option value="-2">JTRASHED</option>
+    </field>
+    <field name="access" type="accesslevel" label="JFIELD_ACCESS_LABEL" default="2" filter="integer" />
+  </fieldset>
+</form>
