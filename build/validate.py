@@ -68,6 +68,7 @@ def validate_source() -> None:
         'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/sql/updates/mysql/1.2.0.sql',
         'component/admin/src/Controller/DocumentController.php',
+        'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php',
         'component/admin/src/Model/DocumentModel.php',
         'component/admin/src/Model/DocumentsModel.php',
@@ -97,6 +98,7 @@ def validate_source() -> None:
     info = (ROOT / 'component/admin/src/Model/InformationModel.php').read_text(encoding='utf-8')
     core_integration = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
     relation_service = (ROOT / 'component/admin/src/Service/RelationService.php').read_text(encoding='utf-8')
+    extension = (ROOT / 'component/admin/src/Extension/DecarodocumentsComponent.php').read_text(encoding='utf-8')
     provider = (ROOT / 'component/admin/services/provider.php').read_text(encoding='utf-8')
     for text, label in (
         (package_script, 'package installer'),
@@ -104,6 +106,7 @@ def validate_source() -> None:
         (info, 'Information model'),
         (core_integration, 'Core relation adapter'),
         (relation_service, 'Relation service'),
+        (extension, 'Documents component extension'),
     ):
         if re.search(r'Xdecaro\\+Core', text):
             fail(f'Legacy Core namespace remains in {label}')
@@ -122,7 +125,8 @@ def validate_source() -> None:
         ),
         'Core relation adapter',
     )
-    require_markers(provider, ('RelationService::class', 'DatabaseInterface::class'), 'DI provider')
+    require_markers(provider, ('DecarodocumentsComponent', 'RelationService::class', 'DatabaseInterface::class', 'setRelationService'), 'DI provider')
+    require_markers(extension, ('extends MVCComponent', 'getRelationService()', 'setRelationService('), 'Documents component extension')
     require_markers(
         relation_service,
         (
@@ -186,6 +190,7 @@ def validate_dist() -> None:
         for required in (
             'decarodocuments.xml',
             'admin/services/provider.php',
+            'admin/src/Extension/DecarodocumentsComponent.php',
             'admin/src/Service/StorageService.php',
             'admin/src/Service/RelationService.php',
             'admin/tmpl/documents/default.php',

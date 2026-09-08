@@ -32,6 +32,20 @@ It supports:
 
 The service enforces Documents ACL server-side. Query results never return `stored_name` or filesystem paths. Actual file delivery continues to use Documents' protected download path and access-level checks.
 
+Consumers do not read the Documents DI container directly. They boot the public Joomla component and ask its extension facade for the service:
+
+```php
+$documents = Factory::getApplication()->bootComponent('com_decarodocuments');
+
+if (!method_exists($documents, 'getRelationService')) {
+    // Documents is absent/older or the public relation API is unavailable.
+}
+
+$relations = $documents->getRelationService();
+```
+
+This keeps the component container private while providing a stable Joomla-level integration surface. Optional consumers must guard component availability and method existence before using it.
+
 Core 1.4 capability discovery advertises:
 
 - `documents.relations.attach@1`;
