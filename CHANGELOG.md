@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 - 2026-09-09
+
+- Added the first provider-owned cross-product relation API through `RelationService`.
+- Added ACL-protected, idempotent attach/detach operations using Core `RelationReference` values.
+- Added ACL-protected relation lookup by external `EntityReference` without exposing private storage paths.
+- Added Core 1.4 Capability Registry declarations for `documents.relations.attach`, `documents.relations.detach` and `documents.relations.query`.
+- Registered the relation service through Joomla dependency injection.
+- Reused the existing `#__decarodocuments_relations` schema; no data/table migration is required.
+- Preserved mandatory Core 1.3.0+ installation policy and all existing Documents identifiers.
+
 ## 1.1.0 - 2026-09-09
 
 - Migrated all Core API consumption to the canonical `xdecaro\Core` namespace introduced by Core 1.3.0.
