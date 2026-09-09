@@ -5,6 +5,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Throwable;
 
 /**
@@ -44,9 +45,10 @@ final class CrossProductIntegrationService
                 ? (int) $service->create($notification)
                 : null;
         } catch (Throwable $exception) {
-            Factory::getApplication()->getLogger()->warning(
+            Log::add(
                 'Documents could not publish an optional notification: ' . $exception->getMessage(),
-                ['category' => 'com_decarodocuments.integration']
+                Log::WARNING,
+                'com_decarodocuments.integration'
             );
             return null;
         }
@@ -83,9 +85,10 @@ final class CrossProductIntegrationService
 
             return $taskId > 0 ? $taskId : null;
         } catch (Throwable $exception) {
-            Factory::getApplication()->getLogger()->warning(
+            Log::add(
                 'Documents could not create an optional task: ' . $exception->getMessage(),
-                ['category' => 'com_decarodocuments.integration']
+                Log::WARNING,
+                'com_decarodocuments.integration'
             );
             return null;
         }

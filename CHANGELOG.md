@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 - 2026-09-09
+
+- Added optional bridges from Documents to Notifications and Tasks using only their documented public component services.
+- Added a Documents-owned Analytics source service with ACL-protected metrics and datasets.
+- Added `plg_xdecaroanalytics_decarodocuments`, loaded only by Analytics provider discovery and safe when Analytics is absent.
+- Added Core capabilities for the Analytics provider and Notifications/Tasks bridges while preserving the existing relation capabilities.
+- Extended the public Documents component surface through DI; no external product reads Documents private tables.
+- Added no document-domain fields or expiry logic: the integration release preserves the current Documents schema and behavior.
+- Package installation enables the Analytics provider only on a fresh install and preserves administrator plugin state on updates.
+
 ## 1.2.1 - 2026-09-09
 
 - Fixed Joomla SQL manifest compatibility by declaring the install SQL file with `charset="utf8"` while retaining `utf8mb4` table definitions.

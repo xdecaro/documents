@@ -23,11 +23,12 @@ def zip_tree(source: Path, destination: Path) -> None:
             archive.writestr(info, path.read_bytes())
 
 
-def package_zip(component_zip: Path, destination: Path) -> None:
+def package_zip(component_zip: Path, analytics_zip: Path, destination: Path) -> None:
     entries = {
         'pkg_decarodocuments.xml': (ROOT / 'package/pkg_decarodocuments.xml').read_bytes(),
         'script.php': (ROOT / 'package/script.php').read_bytes(),
         'com_decarodocuments.zip': component_zip.read_bytes(),
+        'plg_xdecaroanalytics_decarodocuments.zip': analytics_zip.read_bytes(),
     }
     with zipfile.ZipFile(destination, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name in sorted(entries):
@@ -48,24 +49,24 @@ def sha256(path: Path) -> str:
 def main() -> None:
     if not VERSION:
         raise SystemExit('VERSION is empty')
-
     shutil.rmtree(DIST, ignore_errors=True)
     DIST.mkdir(parents=True)
 
     component_zip = DIST / f'com_decarodocuments_{VERSION}.zip'
+    analytics_zip = DIST / f'plg_xdecaroanalytics_decarodocuments_{VERSION}.zip'
     package = DIST / f'pkg_decarodocuments_{VERSION}.zip'
 
     zip_tree(ROOT / 'component', component_zip)
-    package_zip(component_zip, package)
+    zip_tree(ROOT / 'plugins/xdecaroanalytics/decarodocuments', analytics_zip)
+    package_zip(component_zip, analytics_zip, package)
 
-    sums = [
-        f'{sha256(component_zip)}  {component_zip.name}',
-        f'{sha256(package)}  {package.name}',
-    ]
-    (DIST / 'SHA256SUMS.txt').write_text('\n'.join(sums) + '\n', encoding='utf-8')
-
-    print(component_zip)
-    print(package)
+    assets = [component_zip, analytics_zip, package]
+    (DIST / 'SHA256SUMS.txt').write_text(
+        ''.join(f'{sha256(asset)}  {asset.name}\n' for asset in assets),
+        encoding='utf-8',
+    )
+    for asset in assets:
+        print(asset)
     print('Package SHA-256:', sha256(package))
 
 
