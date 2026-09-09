@@ -6,7 +6,7 @@
   <copyright>Copyright (C) 2026 Luca De Caro. All rights reserved.</copyright>
   <license>GNU General Public License version 2 or later</license>
   <authorUrl>https://github.com/xdecaro/documents</authorUrl>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>COM_DECARODOCUMENTS_XML_DESCRIPTION</description>
   <targetplatform name="joomla" version="(5|6).*" />
   <namespace path="src">Xdecaro\Component\Decarodocuments</namespace>
@@ -36,7 +36,7 @@
 
   <install>
     <sql>
-      <file driver="mysql" charset="utf8mb4">sql/install.mysql.utf8mb4.sql</file>
+      <file driver="mysql" charset="utf8">sql/install.mysql.utf8mb4.sql</file>
     </sql>
   </install>
 
