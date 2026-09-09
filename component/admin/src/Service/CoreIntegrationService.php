@@ -43,6 +43,9 @@ final class CoreIntegrationService
             new Capability(self::COMPONENT, 'documents.relations.attach', '1'),
             new Capability(self::COMPONENT, 'documents.relations.detach', '1'),
             new Capability(self::COMPONENT, 'documents.relations.query', '1'),
+            new Capability(self::COMPONENT, 'documents.analytics.provider', '1'),
+            new Capability(self::COMPONENT, 'documents.notifications.bridge', '1'),
+            new Capability(self::COMPONENT, 'documents.tasks.bridge', '1'),
         ];
     }
 
@@ -54,7 +57,6 @@ final class CoreIntegrationService
     public function createDocumentReference(int|string $id): EntityReference
     {
         $this->assertAvailable();
-
         return new EntityReference(self::COMPONENT, 'document', $id);
     }
 
@@ -77,9 +79,7 @@ final class CoreIntegrationService
     private function assertAvailable(): void
     {
         if (!$this->isAvailable()) {
-            throw new \RuntimeException(
-                'Core by xdecaro 1.3.0 or later is required for Documents integration.'
-            );
+            throw new \RuntimeException('Core by xdecaro 1.3.0 or later is required for Documents integration.');
         }
     }
 }

@@ -15,7 +15,9 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 use Xdecaro\Component\Decarodocuments\Administrator\Extension\DecarodocumentsComponent;
+use Xdecaro\Component\Decarodocuments\Administrator\Service\AnalyticsSourceService;
 use Xdecaro\Component\Decarodocuments\Administrator\Service\CoreIntegrationService;
+use Xdecaro\Component\Decarodocuments\Administrator\Service\CrossProductIntegrationService;
 use Xdecaro\Component\Decarodocuments\Administrator\Service\RelationService;
 use Xdecaro\Component\Decarodocuments\Administrator\Service\StorageService;
 
@@ -27,6 +29,11 @@ return new class () implements ServiceProviderInterface {
 
         $container->share(StorageService::class, static fn (): StorageService => new StorageService());
         $container->share(CoreIntegrationService::class, static fn (): CoreIntegrationService => new CoreIntegrationService());
+        $container->share(CrossProductIntegrationService::class, static fn (): CrossProductIntegrationService => new CrossProductIntegrationService());
+        $container->share(
+            AnalyticsSourceService::class,
+            static fn (Container $container): AnalyticsSourceService => new AnalyticsSourceService($container->get(DatabaseInterface::class))
+        );
         $container->share(
             RelationService::class,
             static fn (Container $container): RelationService => new RelationService($container->get(DatabaseInterface::class))
@@ -38,7 +45,9 @@ return new class () implements ServiceProviderInterface {
                 $component = new DecarodocumentsComponent($container->get(ComponentDispatcherFactoryInterface::class));
                 $component->setMVCFactory($container->get(MVCFactoryInterface::class));
                 $component->setRelationService($container->get(RelationService::class));
-
+                $component->setCoreIntegrationService($container->get(CoreIntegrationService::class));
+                $component->setCrossProductIntegrationService($container->get(CrossProductIntegrationService::class));
+                $component->setAnalyticsSourceService($container->get(AnalyticsSourceService::class));
                 return $component;
             }
         );
