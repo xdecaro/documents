@@ -1,0 +1,2 @@
+-- Documents 1.2.0 schema marker.
+-- The relation API reuses the existing #__decarodocuments_relations table; no schema change is required.

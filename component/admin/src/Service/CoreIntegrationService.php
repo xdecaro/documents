@@ -3,11 +3,16 @@ namespace Xdecaro\Component\Decarodocuments\Administrator\Service;
 
 defined('_JEXEC') or die;
 
+use xdecaro\Core\Integration\Capability;
+use xdecaro\Core\Integration\CapabilityRegistry;
+use xdecaro\Core\Integration\EntityReference;
+use xdecaro\Core\Integration\RelationReference;
+
 /**
- * Adapter between Documents and the stable Core by xdecaro reference contract.
+ * Adapter between Documents and stable Core reference/capability contracts.
  *
- * Documents owns relation persistence and semantics. Core only supplies the
- * generic cross-product reference value objects.
+ * Documents owns relation persistence and authorization. Core only supplies
+ * domain-neutral value objects and in-memory capability discovery.
  */
 final class CoreIntegrationService
 {
@@ -18,15 +23,39 @@ final class CoreIntegrationService
     {
         return class_exists(\xdecaro\Core\Version::class)
             && version_compare((string) \xdecaro\Core\Version::VERSION, self::MINIMUM_CORE, '>=')
-            && class_exists(\xdecaro\Core\Integration\EntityReference::class)
-            && class_exists(\xdecaro\Core\Integration\RelationReference::class);
+            && class_exists(EntityReference::class)
+            && class_exists(RelationReference::class);
     }
 
-    public function createDocumentReference(int|string $id): object
+    public function hasCapabilityRegistry(): bool
+    {
+        return class_exists(Capability::class) && class_exists(CapabilityRegistry::class);
+    }
+
+    /** @return array<int,Capability> */
+    public function getCapabilities(): array
+    {
+        if (!$this->hasCapabilityRegistry()) {
+            return [];
+        }
+
+        return [
+            new Capability(self::COMPONENT, 'documents.relations.attach', '1'),
+            new Capability(self::COMPONENT, 'documents.relations.detach', '1'),
+            new Capability(self::COMPONENT, 'documents.relations.query', '1'),
+        ];
+    }
+
+    public function registerCapabilities(CapabilityRegistry $registry): void
+    {
+        $registry->registerMany($this->getCapabilities());
+    }
+
+    public function createDocumentReference(int|string $id): EntityReference
     {
         $this->assertAvailable();
 
-        return new \xdecaro\Core\Integration\EntityReference(self::COMPONENT, 'document', $id);
+        return new EntityReference(self::COMPONENT, 'document', $id);
     }
 
     public function createRelation(
@@ -35,12 +64,12 @@ final class CoreIntegrationService
         string $targetEntity,
         int|string $targetId,
         string $relationType
-    ): object {
+    ): RelationReference {
         $this->assertAvailable();
 
-        return new \xdecaro\Core\Integration\RelationReference(
+        return new RelationReference(
             $this->createDocumentReference($documentId),
-            new \xdecaro\Core\Integration\EntityReference($targetComponent, $targetEntity, $targetId),
+            new EntityReference($targetComponent, $targetEntity, $targetId),
             $relationType
         );
     }

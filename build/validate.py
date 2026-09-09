@@ -21,8 +21,14 @@ def xml_version(path: Path) -> str:
     return (root.findtext('version') or '').strip()
 
 
+def require_markers(text: str, markers: tuple[str, ...], label: str) -> None:
+    for marker in markers:
+        if marker not in text:
+            fail(f'{label} missing {marker}')
+
+
 def validate_source() -> None:
-    if VERSION != '1.1.0':
+    if VERSION != '1.2.0':
         fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
@@ -38,15 +44,13 @@ def validate_source() -> None:
     files = package_root.findall('./files/file')
     if len(files) != 1 or (files[0].get('id') or '') != 'com_decarodocuments' or (files[0].text or '').strip() != 'com_decarodocuments.zip':
         fail('Package child definition is invalid')
-    update_servers = [(n.text or '').strip() for n in package_root.findall('./updateservers/server')]
     expected_update = 'https://raw.githubusercontent.com/xdecaro/documents/main/updates/pkg_decarodocuments.xml'
+    update_servers = [(n.text or '').strip() for n in package_root.findall('./updateservers/server')]
     if update_servers != [expected_update]:
         fail('Package update server is invalid')
 
     feed = ET.parse(ROOT / 'updates/pkg_decarodocuments.xml').getroot().find('update')
-    if feed is None:
-        fail('Update feed has no update node')
-    if (feed.findtext('version') or '').strip() != VERSION:
+    if feed is None or (feed.findtext('version') or '').strip() != VERSION:
         fail('Update feed version mismatch')
     if (feed.findtext('element') or '').strip() != 'pkg_decarodocuments':
         fail('Update feed element mismatch')
@@ -62,12 +66,15 @@ def validate_source() -> None:
         'component/admin/sql/install.mysql.utf8mb4.sql',
         'component/admin/sql/updates/mysql/1.0.0.sql',
         'component/admin/sql/updates/mysql/1.1.0.sql',
+        'component/admin/sql/updates/mysql/1.2.0.sql',
         'component/admin/src/Controller/DocumentController.php',
+        'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php',
         'component/admin/src/Model/DocumentModel.php',
         'component/admin/src/Model/DocumentsModel.php',
         'component/admin/src/Model/InformationModel.php',
         'component/admin/src/Service/CoreIntegrationService.php',
+        'component/admin/src/Service/RelationService.php',
         'component/admin/src/Service/StorageService.php',
         'component/admin/src/Table/DocumentTable.php',
         'component/admin/tmpl/document/edit.php',
@@ -83,62 +90,88 @@ def validate_source() -> None:
         fail('Documents must not introduce a duplicate local design system/media bundle')
 
     package_script = (ROOT / 'package/script.php').read_text(encoding='utf-8')
-    for marker in ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version'):
-        if marker not in package_script:
-            fail(f'Core dependency guard missing {marker}')
+    require_markers(package_script, ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version'), 'Core dependency guard')
 
     core_helper = (ROOT / 'component/admin/src/Helper/CoreUiHelper.php').read_text(encoding='utf-8')
-    for marker in ('xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.3.0'"):
-        if marker not in core_helper:
-            fail(f'Core UI integration missing {marker}')
+    require_markers(core_helper, ('xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.3.0'"), 'Core UI integration')
 
     info = (ROOT / 'component/admin/src/Model/InformationModel.php').read_text(encoding='utf-8')
-    relation = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
-    for text, label in ((package_script, 'package installer'), (core_helper, 'Core UI helper'), (info, 'Information model'), (relation, 'Core relation adapter')):
+    core_integration = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
+    relation_service = (ROOT / 'component/admin/src/Service/RelationService.php').read_text(encoding='utf-8')
+    extension = (ROOT / 'component/admin/src/Extension/DecarodocumentsComponent.php').read_text(encoding='utf-8')
+    provider = (ROOT / 'component/admin/services/provider.php').read_text(encoding='utf-8')
+    for text, label in (
+        (package_script, 'package installer'),
+        (core_helper, 'Core UI helper'),
+        (info, 'Information model'),
+        (core_integration, 'Core relation adapter'),
+        (relation_service, 'Relation service'),
+        (extension, 'Documents component extension'),
+    ):
         if re.search(r'Xdecaro\\+Core', text):
             fail(f'Legacy Core namespace remains in {label}')
 
+    require_markers(
+        core_integration,
+        (
+            "COMPONENT = 'com_decarodocuments'",
+            "MINIMUM_CORE = '1.3.0'",
+            'xdecaro\\Core\\Integration\\EntityReference',
+            'xdecaro\\Core\\Integration\\RelationReference',
+            'CapabilityRegistry',
+            'documents.relations.attach',
+            'documents.relations.detach',
+            'documents.relations.query',
+        ),
+        'Core relation adapter',
+    )
+    require_markers(provider, ('DecarodocumentsComponent', 'RelationService::class', 'DatabaseInterface::class', 'setRelationService'), 'DI provider')
+    require_markers(extension, ('extends MVCComponent', 'getRelationService()', 'setRelationService('), 'Documents component extension')
+    require_markers(
+        relation_service,
+        (
+            "authorise($action, CoreIntegrationService::COMPONENT)",
+            '#__decarodocuments_relations',
+            '#__decarodocuments_documents',
+            'RelationReference',
+            'EntityReference',
+            'relationExists',
+            'target_component',
+            'target_entity',
+            'target_id',
+            'relation_type',
+        ),
+        'Relation service',
+    )
+    if 'stored_name' in relation_service or 'JPATH_ROOT' in relation_service:
+        fail('Relation API must not expose private storage paths')
+
     storage = (ROOT / 'component/admin/src/Service/StorageService.php').read_text(encoding='utf-8')
-    for marker in ('dirname(JPATH_ROOT)', 'is_uploaded_file', 'FILEINFO_MIME_TYPE', 'move_uploaded_file', "hash_file('sha256'", 'MAX_FILE_SIZE'):
-        if marker not in storage:
-            fail(f'Storage security marker missing {marker}')
+    require_markers(storage, ('dirname(JPATH_ROOT)', 'is_uploaded_file', 'FILEINFO_MIME_TYPE', 'move_uploaded_file', "hash_file('sha256'", 'MAX_FILE_SIZE'), 'Storage security')
     if 'JPATH_ROOT . DIRECTORY_SEPARATOR' in storage:
         fail('Private storage must not be rooted inside the Joomla public root')
 
     model = (ROOT / 'component/admin/src/Model/DocumentModel.php').read_text(encoding='utf-8')
-    for marker in ("authorise('core.edit.state'", 'random_bytes(16)', 'storeUploadedFile', 'parent::save'):
-        if marker not in model:
-            fail(f'Document save security marker missing {marker}')
+    require_markers(model, ("authorise('core.edit.state'", 'random_bytes(16)', 'storeUploadedFile', 'parent::save'), 'Document save security')
 
     controller = (ROOT / 'component/admin/src/Controller/DocumentController.php').read_text(encoding='utf-8')
-    for marker in ("authorise('core.manage'", 'getAuthorisedViewLevels', 'X-Content-Type-Options', 'Content-Disposition'):
-        if marker not in controller:
-            fail(f'Download authorization marker missing {marker}')
+    require_markers(controller, ("authorise('core.manage'", 'getAuthorisedViewLevels', 'X-Content-Type-Options', 'Content-Disposition'), 'Download authorization')
 
-    edit_template = (ROOT / 'component/admin/tmpl/document/edit.php').read_text(encoding='utf-8')
-    list_template = (ROOT / 'component/admin/tmpl/documents/default.php').read_text(encoding='utf-8')
-    for text, label in ((edit_template, 'edit'), (list_template, 'list')):
-        if "HTMLHelper::_('form.token')" not in text:
-            fail(f'CSRF token missing from {label} template')
-        if 'xdecaro-scope' not in text:
-            fail(f'Core scope missing from {label} template')
+    for rel in ('component/admin/tmpl/document/edit.php', 'component/admin/tmpl/documents/default.php'):
+        text = (ROOT / rel).read_text(encoding='utf-8')
+        require_markers(text, ("HTMLHelper::_('form.token')", 'xdecaro-scope'), rel)
 
     sql = (ROOT / 'component/admin/sql/install.mysql.utf8mb4.sql').read_text(encoding='utf-8')
-    for marker in ('#__decarodocuments_documents', '#__decarodocuments_relations', 'FOREIGN KEY (`document_id`)', 'target_component'):
-        if marker not in sql:
-            fail(f'Database schema missing {marker}')
+    require_markers(sql, ('#__decarodocuments_documents', '#__decarodocuments_relations', 'FOREIGN KEY (`document_id`)', 'target_component'), 'Database schema')
     if re.search(r'FOREIGN KEY.*target_', sql, re.I | re.S):
         fail('Cross-product target columns must not have foreign keys')
-    if 'DROP TABLE' in sql.upper():
-        fail('Install/update SQL must not drop tables')
+    for sql_file in (ROOT / 'component/admin/sql').rglob('*.sql'):
+        if re.search(r'\b(?:DROP\s+TABLE|TRUNCATE\s+TABLE)\b', sql_file.read_text(encoding='utf-8'), re.I):
+            fail(f'Destructive SQL found in {sql_file.relative_to(ROOT)}')
 
-    for marker in ("COMPONENT = 'com_decarodocuments'", "MINIMUM_CORE = '1.3.0'", 'xdecaro\\Core\\Integration\\EntityReference', 'xdecaro\\Core\\Integration\\RelationReference'):
-        if marker not in relation:
-            fail(f'Core relation adapter missing {marker}')
-
-    for p in ROOT.rglob('*.xml'):
-        if 'dist' not in p.parts:
-            ET.parse(p)
+    for path in ROOT.rglob('*.xml'):
+        if 'dist' not in path.parts:
+            ET.parse(path)
 
     print(f'Documents {VERSION} source validation OK')
 
@@ -148,13 +181,21 @@ def validate_dist() -> None:
     component_zip = dist / f'com_decarodocuments_{VERSION}.zip'
     package_zip = dist / f'pkg_decarodocuments_{VERSION}.zip'
     sums = dist / 'SHA256SUMS.txt'
-    for p in (component_zip, package_zip, sums):
-        if not p.is_file():
-            fail(f'Missing build artifact {p.name}')
+    for path in (component_zip, package_zip, sums):
+        if not path.is_file():
+            fail(f'Missing build artifact {path.name}')
 
     with zipfile.ZipFile(component_zip) as archive:
         names = set(archive.namelist())
-        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Service/StorageService.php', 'admin/tmpl/documents/default.php'):
+        for required in (
+            'decarodocuments.xml',
+            'admin/services/provider.php',
+            'admin/src/Extension/DecarodocumentsComponent.php',
+            'admin/src/Service/StorageService.php',
+            'admin/src/Service/RelationService.php',
+            'admin/tmpl/documents/default.php',
+            'admin/sql/updates/mysql/1.2.0.sql',
+        ):
             if required not in names:
                 fail(f'Component ZIP missing {required}')
 
