@@ -13,7 +13,7 @@
     <tags>
       <tag>stable</tag>
     </tags>
-    <sha256>0000000000000000000000000000000000000000000000000000000000000000</sha256>
+    <sha256>e5dc7ea0f2c86b414f810a75c70fb56005c993693348e92fe528c2a633627bc2</sha256>
     <maintainer>Luca De Caro</maintainer>
     <maintainerurl>https://github.com/xdecaro/documents</maintainerurl>
     <targetplatform name="joomla" version="(5|6)\.[0-9]+" />
