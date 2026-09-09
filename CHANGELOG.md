@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1 - 2026-09-09
+
+- Fixed Joomla SQL manifest compatibility by declaring the install SQL file with `charset="utf8"` while retaining `utf8mb4` table definitions.
+- Added a non-destructive `1.2.1.sql` repair migration using `CREATE TABLE IF NOT EXISTS` for both Documents-owned tables.
+- Existing Documents data is preserved; no table is dropped, truncated or recreated during update.
+- Added runtime regression coverage for clean installation and repair upgrade from the published 1.2.0 package on Joomla 5.4.8 and 6.1.3.
+- Preserved the Documents 1.2 public relation API, mandatory Core 1.3.0+ policy, stable Joomla identifiers and private storage behavior.
+
 ## 1.2.0 - 2026-09-09
 
 - Added the first provider-owned cross-product relation API through `RelationService`.
