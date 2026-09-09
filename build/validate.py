@@ -28,7 +28,7 @@ def require_markers(text: str, markers: tuple[str, ...], label: str) -> None:
 
 
 def validate_source() -> None:
-    if VERSION != '1.2.1':
+    if VERSION != '1.2.2':
         fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
@@ -77,6 +77,7 @@ def validate_source() -> None:
         'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/sql/updates/mysql/1.2.0.sql',
         'component/admin/sql/updates/mysql/1.2.1.sql',
+        'component/admin/sql/updates/mysql/1.2.2.sql',
         'component/admin/src/Controller/DocumentController.php',
         'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php',
@@ -100,7 +101,13 @@ def validate_source() -> None:
         fail('Documents must not introduce a duplicate local design system/media bundle')
 
     package_script = (ROOT / 'package/script.php').read_text(encoding='utf-8')
-    require_markers(package_script, ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version'), 'Core dependency guard')
+    require_markers(
+        package_script,
+        ('final class pkg_decarodocumentsInstallerScript', 'MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version', 'return false;'),
+        'Core dependency guard',
+    )
+    if 'class PkgDecarodocumentsInstallerScript' in package_script:
+        fail('Incorrect legacy package installer class name must not return')
 
     core_helper = (ROOT / 'component/admin/src/Helper/CoreUiHelper.php').read_text(encoding='utf-8')
     require_markers(core_helper, ('xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.3.0'"), 'Core UI integration')
@@ -149,6 +156,10 @@ def validate_source() -> None:
         if re.search(r'FOREIGN KEY.*target_', schema, re.I | re.S):
             fail('Cross-product target columns must not have foreign keys')
 
+    marker_122 = (ROOT / 'component/admin/sql/updates/mysql/1.2.2.sql').read_text(encoding='utf-8')
+    if re.search(r'\b(?:CREATE|ALTER|DROP|TRUNCATE|DELETE|UPDATE|INSERT)\b', marker_122, re.I):
+        fail('1.2.2 must remain a schema-version marker without database mutations')
+
     for sql_file in (ROOT / 'component/admin/sql').rglob('*.sql'):
         if re.search(r'\b(?:DROP\s+TABLE|TRUNCATE\s+TABLE)\b', sql_file.read_text(encoding='utf-8'), re.I):
             fail(f'Destructive SQL found in {sql_file.relative_to(ROOT)}')
@@ -171,7 +182,7 @@ def validate_dist() -> None:
 
     with zipfile.ZipFile(component_zip) as archive:
         names = set(archive.namelist())
-        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php', 'admin/tmpl/documents/default.php', 'admin/sql/updates/mysql/1.2.1.sql'):
+        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php', 'admin/tmpl/documents/default.php', f'admin/sql/updates/mysql/{VERSION}.sql'):
             if required not in names:
                 fail(f'Component ZIP missing {required}')
 
@@ -179,6 +190,9 @@ def validate_dist() -> None:
         names = set(archive.namelist())
         if names != {'pkg_decarodocuments.xml', 'script.php', 'com_decarodocuments.zip'}:
             fail(f'Unexpected package ZIP contents: {sorted(names)}')
+        installer = archive.read('script.php').decode('utf-8')
+        if 'final class pkg_decarodocumentsInstallerScript' not in installer:
+            fail('Package ZIP installer class does not match Joomla package element resolution')
 
     print(f'Documents {VERSION} dist validation OK')
 

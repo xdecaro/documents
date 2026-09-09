@@ -1,0 +1,2 @@
+-- Documents 1.2.2
+-- No database schema changes. This marker keeps Joomla schema version tracking aligned with the package release.

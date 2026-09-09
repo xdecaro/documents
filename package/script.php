@@ -4,7 +4,11 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
-final class PkgDecarodocumentsInstallerScript
+/**
+ * The legacy installer class name must match the package element exactly.
+ * Joomla resolves pkg_decarodocuments to pkg_decarodocumentsInstallerScript.
+ */
+final class pkg_decarodocumentsInstallerScript
 {
     private const MINIMUM_CORE = '1.3.0';
 

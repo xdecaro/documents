@@ -33,4 +33,14 @@ if (strpos($core, 'Xdecaro\\Core\\') !== false) {
     exit(1);
 }
 
+$installer = file_get_contents($root . '/package/script.php');
+if (strpos($installer, 'final class pkg_decarodocumentsInstallerScript') === false) {
+    fwrite(STDERR, "Package installer class does not match Joomla package element resolution\n");
+    exit(1);
+}
+if (strpos($installer, "private const MINIMUM_CORE = '1.3.0';") === false || strpos($installer, 'return false;') === false) {
+    fwrite(STDERR, "Mandatory Core preflight baseline missing\n");
+    exit(1);
+}
+
 echo "Documents smoke OK\n";

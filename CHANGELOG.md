@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2 - 2026-09-09
+
+- Fixed the mandatory Core installer guard by naming the legacy package installer class exactly as Joomla resolves `pkg_decarodocuments` (`pkg_decarodocumentsInstallerScript`).
+- Added real Joomla 5.4.8 and 6.1.3 regression coverage proving that Documents leaves no package/component registration or component files behind when Core is absent.
+- Preserved the existing Core 1.3.0+ requirement, public relation API, document storage, ACL behavior and stable Joomla identifiers.
+- No database schema changes; `1.2.2.sql` is a schema-version marker only.
+
 ## 1.2.1 - 2026-09-09
 
 - Fixed Joomla SQL manifest compatibility by declaring the install SQL file with `charset="utf8"` while retaining `utf8mb4` table definitions.
