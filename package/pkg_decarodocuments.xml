@@ -2,7 +2,7 @@
 <extension type="package" method="upgrade">
   <name>PKG_DECARODOCUMENTS</name>
   <packagename>decarodocuments</packagename>
-  <version>1.2.2</version>
+  <version>1.3.0</version>
   <creationDate>2026-09</creationDate>
   <author>Luca De Caro</author>
   <authorUrl>https://github.com/xdecaro/documents</authorUrl>
@@ -14,6 +14,7 @@
 
   <files>
     <file type="component" id="com_decarodocuments">com_decarodocuments.zip</file>
+    <file type="plugin" id="decarodocuments" group="xdecaroanalytics">plg_xdecaroanalytics_decarodocuments.zip</file>
   </files>
 
   <updateservers>

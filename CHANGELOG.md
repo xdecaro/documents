@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 - 2026-09-09
+
+- Added optional public-service bridges from Documents to Notifications and Tasks without cross-product database access.
+- Added an ACL-protected Documents Analytics source and `plg_xdecaroanalytics_decarodocuments` provider adapter.
+- Added Core capability declarations for `documents.analytics.provider`, `documents.notifications.bridge` and `documents.tasks.bridge` while preserving the existing relation capabilities.
+- Exposed provider-owned integration services through the Joomla component extension/DI surface.
+- Added a non-destructive `1.3.0.sql` schema marker; no document table or stored document data is changed.
+- Preserved all 1.2.2 Core dependency, atomic missing-Core rejection, repair-upgrade tests, private storage, ACL and relation API behavior.
+- Optional Analytics integration is enabled on a fresh package install; package updates do not overwrite an administrator's plugin enabled/disabled choice.
+
 ## 1.2.2 - 2026-09-09
 
 - Fixed the mandatory Core installer guard by naming the legacy package installer class exactly as Joomla resolves `pkg_decarodocuments` (`pkg_decarodocumentsInstallerScript`).
