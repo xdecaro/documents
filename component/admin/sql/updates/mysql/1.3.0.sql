@@ -1,0 +1,2 @@
+-- Documents 1.3.0 integration release.
+-- No schema changes are required; this file advances Joomla schema version tracking.
