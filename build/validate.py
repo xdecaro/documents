@@ -28,12 +28,13 @@ def require_markers(text: str, markers: tuple[str, ...], label: str) -> None:
 
 
 def validate_source() -> None:
-    if VERSION != '1.2.1':
+    if VERSION != '1.3.0':
         fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
     package = ROOT / 'package/pkg_decarodocuments.xml'
-    for path in (component, package):
+    analytics_manifest = ROOT / 'plugins/xdecaroanalytics/decarodocuments/decarodocuments.xml'
+    for path in (component, package, analytics_manifest):
         ET.parse(path)
         if xml_version(path) != VERSION:
             fail(f'{path.relative_to(ROOT)} version does not match VERSION')
@@ -51,8 +52,17 @@ def validate_source() -> None:
     if (package_root.findtext('packagename') or '').strip() != 'decarodocuments':
         fail('Package name is not stable')
     files = package_root.findall('./files/file')
-    if len(files) != 1 or (files[0].get('id') or '') != 'com_decarodocuments' or (files[0].text or '').strip() != 'com_decarodocuments.zip':
-        fail('Package child definition is invalid')
+    expected_children = {
+        ('component', 'com_decarodocuments', '', 'com_decarodocuments.zip'),
+        ('plugin', 'decarodocuments', 'xdecaroanalytics', 'plg_xdecaroanalytics_decarodocuments.zip'),
+    }
+    actual_children = {
+        ((node.get('type') or ''), (node.get('id') or ''), (node.get('group') or ''), (node.text or '').strip())
+        for node in files
+    }
+    if actual_children != expected_children:
+        fail(f'Package child definition is invalid: {sorted(actual_children)}')
+
     expected_update = 'https://raw.githubusercontent.com/xdecaro/documents/main/updates/pkg_decarodocuments.xml'
     update_servers = [(n.text or '').strip() for n in package_root.findall('./updateservers/server')]
     if update_servers != [expected_update]:
@@ -77,19 +87,25 @@ def validate_source() -> None:
         'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/sql/updates/mysql/1.2.0.sql',
         'component/admin/sql/updates/mysql/1.2.1.sql',
+        'component/admin/sql/updates/mysql/1.3.0.sql',
         'component/admin/src/Controller/DocumentController.php',
         'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php',
         'component/admin/src/Model/DocumentModel.php',
         'component/admin/src/Model/DocumentsModel.php',
         'component/admin/src/Model/InformationModel.php',
+        'component/admin/src/Service/AnalyticsSourceService.php',
         'component/admin/src/Service/CoreIntegrationService.php',
+        'component/admin/src/Service/CrossProductIntegrationService.php',
         'component/admin/src/Service/RelationService.php',
         'component/admin/src/Service/StorageService.php',
         'component/admin/src/Table/DocumentTable.php',
         'component/admin/tmpl/document/edit.php',
         'component/admin/tmpl/documents/default.php',
         'component/admin/tmpl/information/default.php',
+        'plugins/xdecaroanalytics/decarodocuments/services/provider.php',
+        'plugins/xdecaroanalytics/decarodocuments/src/Extension/Decarodocuments.php',
+        'plugins/xdecaroanalytics/decarodocuments/src/Provider/DocumentsProvider.php',
         'package/script.php',
     ]
     for rel in required:
@@ -100,7 +116,11 @@ def validate_source() -> None:
         fail('Documents must not introduce a duplicate local design system/media bundle')
 
     package_script = (ROOT / 'package/script.php').read_text(encoding='utf-8')
-    require_markers(package_script, ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version'), 'Core dependency guard')
+    require_markers(
+        package_script,
+        ('MINIMUM_CORE', "'1.3.0'", 'pkg_xdecarocore', 'xdecaro\\Core\\Version', "'xdecaroanalytics'", "'decarodocuments'", "$type !== 'install'"),
+        'Core dependency and plugin install guard',
+    )
 
     core_helper = (ROOT / 'component/admin/src/Helper/CoreUiHelper.php').read_text(encoding='utf-8')
     require_markers(core_helper, ('xdecaro\\Core\\Asset\\AssetService', 'useComponents', "'1.3.0'"), 'Core UI integration')
@@ -108,8 +128,13 @@ def validate_source() -> None:
     info = (ROOT / 'component/admin/src/Model/InformationModel.php').read_text(encoding='utf-8')
     core_integration = (ROOT / 'component/admin/src/Service/CoreIntegrationService.php').read_text(encoding='utf-8')
     relation_service = (ROOT / 'component/admin/src/Service/RelationService.php').read_text(encoding='utf-8')
+    analytics_source = (ROOT / 'component/admin/src/Service/AnalyticsSourceService.php').read_text(encoding='utf-8')
+    cross_product = (ROOT / 'component/admin/src/Service/CrossProductIntegrationService.php').read_text(encoding='utf-8')
     extension = (ROOT / 'component/admin/src/Extension/DecarodocumentsComponent.php').read_text(encoding='utf-8')
     provider = (ROOT / 'component/admin/services/provider.php').read_text(encoding='utf-8')
+    analytics_plugin = (ROOT / 'plugins/xdecaroanalytics/decarodocuments/src/Extension/Decarodocuments.php').read_text(encoding='utf-8')
+    analytics_adapter = (ROOT / 'plugins/xdecaroanalytics/decarodocuments/src/Provider/DocumentsProvider.php').read_text(encoding='utf-8')
+
     for text, label in (
         (package_script, 'package installer'),
         (core_helper, 'Core UI helper'),
@@ -121,12 +146,38 @@ def validate_source() -> None:
         if re.search(r'Xdecaro\\+Core', text):
             fail(f'Legacy Core namespace remains in {label}')
 
-    require_markers(core_integration, ("COMPONENT = 'com_decarodocuments'", "MINIMUM_CORE = '1.3.0'", 'xdecaro\\Core\\Integration\\EntityReference', 'xdecaro\\Core\\Integration\\RelationReference', 'CapabilityRegistry', 'documents.relations.attach', 'documents.relations.detach', 'documents.relations.query'), 'Core relation adapter')
-    require_markers(provider, ('DecarodocumentsComponent', 'RelationService::class', 'DatabaseInterface::class', 'setRelationService'), 'DI provider')
-    require_markers(extension, ('extends MVCComponent', 'getRelationService()', 'setRelationService('), 'Documents component extension')
+    require_markers(
+        core_integration,
+        (
+            "COMPONENT = 'com_decarodocuments'", "MINIMUM_CORE = '1.3.0'",
+            'xdecaro\\Core\\Integration\\EntityReference', 'xdecaro\\Core\\Integration\\RelationReference',
+            'CapabilityRegistry', 'documents.relations.attach', 'documents.relations.detach', 'documents.relations.query',
+            'documents.analytics.provider', 'documents.notifications.bridge', 'documents.tasks.bridge',
+        ),
+        'Core relation adapter',
+    )
+    require_markers(provider, ('DecarodocumentsComponent', 'RelationService::class', 'AnalyticsSourceService::class', 'CrossProductIntegrationService::class', 'DatabaseInterface::class', 'setAnalyticsSourceService'), 'DI provider')
+    require_markers(extension, ('extends MVCComponent', 'getRelationService()', 'getAnalyticsSourceService()', 'getCrossProductIntegrationService()', 'getCoreIntegrationService()'), 'Documents component extension')
     require_markers(relation_service, ("authorise($action, CoreIntegrationService::COMPONENT)", '#__decarodocuments_relations', '#__decarodocuments_documents', 'RelationReference', 'EntityReference', 'relationExists', 'target_component', 'target_entity', 'target_id', 'relation_type'), 'Relation service')
     if 'stored_name' in relation_service or 'JPATH_ROOT' in relation_service:
         fail('Relation API must not expose private storage paths')
+
+    require_markers(
+        analytics_source,
+        ('assertAuthorised', "authorise('core.manage'", '#__decarodocuments_documents', '#__decarodocuments_relations', 'documents.storage_bytes', 'documents.by_mime_type'),
+        'Documents Analytics source',
+    )
+    require_markers(
+        cross_product,
+        ('com_xdecaronotifications', 'getNotificationService', 'com_xdecarotasks', 'getTaskService', 'source_component', 'Log::WARNING'),
+        'Documents cross-product bridge',
+    )
+    if '#__xdecaronotifications_' in cross_product or '#__xdecarotasks_' in cross_product:
+        fail('Documents bridge must not access Notifications/Tasks tables')
+    require_markers(analytics_plugin, ('RegisterProvidersEvent::NAME', "bootComponent('com_decarodocuments')", 'getAnalyticsSourceService'), 'Analytics discovery plugin')
+    require_markers(analytics_adapter, ('implements AnalyticsProviderInterface', "return 'documents'", 'getMetric(', 'getDataset('), 'Analytics adapter')
+    if '#__decarodocuments_' in analytics_adapter:
+        fail('Analytics plugin must delegate to the Documents-owned source service instead of reading tables')
 
     storage = (ROOT / 'component/admin/src/Service/StorageService.php').read_text(encoding='utf-8')
     require_markers(storage, ('dirname(JPATH_ROOT)', 'is_uploaded_file', 'FILEINFO_MIME_TYPE', 'move_uploaded_file', "hash_file('sha256'", 'MAX_FILE_SIZE'), 'Storage security')
@@ -163,21 +214,35 @@ def validate_source() -> None:
 def validate_dist() -> None:
     dist = ROOT / 'dist'
     component_zip = dist / f'com_decarodocuments_{VERSION}.zip'
+    analytics_zip = dist / f'plg_xdecaroanalytics_decarodocuments_{VERSION}.zip'
     package_zip = dist / f'pkg_decarodocuments_{VERSION}.zip'
     sums = dist / 'SHA256SUMS.txt'
-    for path in (component_zip, package_zip, sums):
+    for path in (component_zip, analytics_zip, package_zip, sums):
         if not path.is_file():
             fail(f'Missing build artifact {path.name}')
 
     with zipfile.ZipFile(component_zip) as archive:
         names = set(archive.namelist())
-        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php', 'admin/tmpl/documents/default.php', 'admin/sql/updates/mysql/1.2.1.sql'):
+        for required in (
+            'decarodocuments.xml', 'admin/services/provider.php',
+            'admin/src/Extension/DecarodocumentsComponent.php',
+            'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php',
+            'admin/src/Service/AnalyticsSourceService.php', 'admin/src/Service/CrossProductIntegrationService.php',
+            'admin/tmpl/documents/default.php', 'admin/sql/updates/mysql/1.3.0.sql',
+        ):
             if required not in names:
                 fail(f'Component ZIP missing {required}')
 
+    with zipfile.ZipFile(analytics_zip) as archive:
+        names = set(archive.namelist())
+        for required in ('decarodocuments.xml', 'services/provider.php', 'src/Extension/Decarodocuments.php', 'src/Provider/DocumentsProvider.php'):
+            if required not in names:
+                fail(f'Analytics plugin ZIP missing {required}')
+
     with zipfile.ZipFile(package_zip) as archive:
         names = set(archive.namelist())
-        if names != {'pkg_decarodocuments.xml', 'script.php', 'com_decarodocuments.zip'}:
+        expected = {'pkg_decarodocuments.xml', 'script.php', 'com_decarodocuments.zip', 'plg_xdecaroanalytics_decarodocuments.zip'}
+        if names != expected:
             fail(f'Unexpected package ZIP contents: {sorted(names)}')
 
     print(f'Documents {VERSION} dist validation OK')
