@@ -28,7 +28,7 @@ def require_markers(text: str, markers: tuple[str, ...], label: str) -> None:
 
 
 def validate_source() -> None:
-    if VERSION != '1.2.0':
+    if VERSION != '1.2.1':
         fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
@@ -37,6 +37,15 @@ def validate_source() -> None:
         ET.parse(path)
         if xml_version(path) != VERSION:
             fail(f'{path.relative_to(ROOT)} version does not match VERSION')
+
+    component_root = ET.parse(component).getroot()
+    install_sql = component_root.find('./install/sql/file')
+    if install_sql is None:
+        fail('Component install SQL entry is missing')
+    if (install_sql.get('driver') or '') != 'mysql' or (install_sql.get('charset') or '') != 'utf8':
+        fail('Joomla install SQL manifest must use driver="mysql" charset="utf8"')
+    if (install_sql.text or '').strip() != 'sql/install.mysql.utf8mb4.sql':
+        fail('Component install SQL path changed unexpectedly')
 
     package_root = ET.parse(package).getroot()
     if (package_root.findtext('packagename') or '').strip() != 'decarodocuments':
@@ -67,6 +76,7 @@ def validate_source() -> None:
         'component/admin/sql/updates/mysql/1.0.0.sql',
         'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/sql/updates/mysql/1.2.0.sql',
+        'component/admin/sql/updates/mysql/1.2.1.sql',
         'component/admin/src/Controller/DocumentController.php',
         'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php',
@@ -111,38 +121,10 @@ def validate_source() -> None:
         if re.search(r'Xdecaro\\+Core', text):
             fail(f'Legacy Core namespace remains in {label}')
 
-    require_markers(
-        core_integration,
-        (
-            "COMPONENT = 'com_decarodocuments'",
-            "MINIMUM_CORE = '1.3.0'",
-            'xdecaro\\Core\\Integration\\EntityReference',
-            'xdecaro\\Core\\Integration\\RelationReference',
-            'CapabilityRegistry',
-            'documents.relations.attach',
-            'documents.relations.detach',
-            'documents.relations.query',
-        ),
-        'Core relation adapter',
-    )
+    require_markers(core_integration, ("COMPONENT = 'com_decarodocuments'", "MINIMUM_CORE = '1.3.0'", 'xdecaro\\Core\\Integration\\EntityReference', 'xdecaro\\Core\\Integration\\RelationReference', 'CapabilityRegistry', 'documents.relations.attach', 'documents.relations.detach', 'documents.relations.query'), 'Core relation adapter')
     require_markers(provider, ('DecarodocumentsComponent', 'RelationService::class', 'DatabaseInterface::class', 'setRelationService'), 'DI provider')
     require_markers(extension, ('extends MVCComponent', 'getRelationService()', 'setRelationService('), 'Documents component extension')
-    require_markers(
-        relation_service,
-        (
-            "authorise($action, CoreIntegrationService::COMPONENT)",
-            '#__decarodocuments_relations',
-            '#__decarodocuments_documents',
-            'RelationReference',
-            'EntityReference',
-            'relationExists',
-            'target_component',
-            'target_entity',
-            'target_id',
-            'relation_type',
-        ),
-        'Relation service',
-    )
+    require_markers(relation_service, ("authorise($action, CoreIntegrationService::COMPONENT)", '#__decarodocuments_relations', '#__decarodocuments_documents', 'RelationReference', 'EntityReference', 'relationExists', 'target_component', 'target_entity', 'target_id', 'relation_type'), 'Relation service')
     if 'stored_name' in relation_service or 'JPATH_ROOT' in relation_service:
         fail('Relation API must not expose private storage paths')
 
@@ -153,7 +135,6 @@ def validate_source() -> None:
 
     model = (ROOT / 'component/admin/src/Model/DocumentModel.php').read_text(encoding='utf-8')
     require_markers(model, ("authorise('core.edit.state'", 'random_bytes(16)', 'storeUploadedFile', 'parent::save'), 'Document save security')
-
     controller = (ROOT / 'component/admin/src/Controller/DocumentController.php').read_text(encoding='utf-8')
     require_markers(controller, ("authorise('core.manage'", 'getAuthorisedViewLevels', 'X-Content-Type-Options', 'Content-Disposition'), 'Download authorization')
 
@@ -161,10 +142,13 @@ def validate_source() -> None:
         text = (ROOT / rel).read_text(encoding='utf-8')
         require_markers(text, ("HTMLHelper::_('form.token')", 'xdecaro-scope'), rel)
 
-    sql = (ROOT / 'component/admin/sql/install.mysql.utf8mb4.sql').read_text(encoding='utf-8')
-    require_markers(sql, ('#__decarodocuments_documents', '#__decarodocuments_relations', 'FOREIGN KEY (`document_id`)', 'target_component'), 'Database schema')
-    if re.search(r'FOREIGN KEY.*target_', sql, re.I | re.S):
-        fail('Cross-product target columns must not have foreign keys')
+    install_schema = (ROOT / 'component/admin/sql/install.mysql.utf8mb4.sql').read_text(encoding='utf-8')
+    repair_schema = (ROOT / 'component/admin/sql/updates/mysql/1.2.1.sql').read_text(encoding='utf-8')
+    for schema, label in ((install_schema, 'Database schema'), (repair_schema, '1.2.1 repair schema')):
+        require_markers(schema, ('CREATE TABLE IF NOT EXISTS `#__decarodocuments_documents`', 'CREATE TABLE IF NOT EXISTS `#__decarodocuments_relations`', 'FOREIGN KEY (`document_id`)', 'target_component', 'DEFAULT CHARSET=utf8mb4'), label)
+        if re.search(r'FOREIGN KEY.*target_', schema, re.I | re.S):
+            fail('Cross-product target columns must not have foreign keys')
+
     for sql_file in (ROOT / 'component/admin/sql').rglob('*.sql'):
         if re.search(r'\b(?:DROP\s+TABLE|TRUNCATE\s+TABLE)\b', sql_file.read_text(encoding='utf-8'), re.I):
             fail(f'Destructive SQL found in {sql_file.relative_to(ROOT)}')
@@ -187,15 +171,7 @@ def validate_dist() -> None:
 
     with zipfile.ZipFile(component_zip) as archive:
         names = set(archive.namelist())
-        for required in (
-            'decarodocuments.xml',
-            'admin/services/provider.php',
-            'admin/src/Extension/DecarodocumentsComponent.php',
-            'admin/src/Service/StorageService.php',
-            'admin/src/Service/RelationService.php',
-            'admin/tmpl/documents/default.php',
-            'admin/sql/updates/mysql/1.2.0.sql',
-        ):
+        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php', 'admin/tmpl/documents/default.php', 'admin/sql/updates/mysql/1.2.1.sql'):
             if required not in names:
                 fail(f'Component ZIP missing {required}')
 
