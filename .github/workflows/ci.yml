@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         joomla: ['5.4.8', '6.1.3']
-        mode: ['clean', 'repair-1.2.0']
+        mode: ['clean', 'repair-1.2.0', 'missing-core']
     services:
       mysql:
         image: mysql:8.0
@@ -62,7 +62,7 @@ jobs:
           php-version: '8.3'
           extensions: mysqli, zip, simplexml
           coverage: none
-      - name: Build Documents 1.2.1
+      - name: Build Documents package
         run: python3 build/build.py
       - name: Download verified dependencies
         shell: bash
@@ -84,14 +84,43 @@ jobs:
             echo 'e5dc7ea0f2c86b414f810a75c70fb56005c993693348e92fe528c2a633627bc2  /tmp/documents-old.zip' | sha256sum --check --strict
           fi
           mkdir joomla && unzip -q /tmp/joomla.zip -d joomla
-      - name: Install Joomla and Core
+      - name: Install Joomla
         shell: bash
         run: |
           set -euo pipefail
           cd joomla
           php installation/joomla.php install --site-name='Documents CI' --admin-user='Documents CI Admin' --admin-username=admin --admin-password="DocsCI-${GITHUB_RUN_ID}!" --admin-email=admin@example.invalid --db-type=mysqli --db-host=127.0.0.1 --db-user=root --db-pass='' --db-name=joomla --db-prefix=doc_ --db-encryption=0 --no-interaction
+      - name: Install Core when required
+        if: matrix.mode != 'missing-core'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
           php cli/joomla.php extension:install --path=/tmp/core.zip -vvv
+      - name: Verify mandatory Core rejection
+        if: matrix.mode == 'missing-core'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd joomla
+          VERSION="$(tr -d '\r\n' < "$GITHUB_WORKSPACE/VERSION")"
+          set +e
+          php cli/joomla.php extension:install --path="$GITHUB_WORKSPACE/dist/pkg_decarodocuments_${VERSION}.zip" -vvv >/tmp/documents-without-core.log 2>&1
+          STATUS=$?
+          set -e
+          echo "documents_without_core_status=${STATUS}"
+          cat /tmp/documents-without-core.log
+
+          MYSQL=(mysql --protocol=TCP -h127.0.0.1 -uroot --batch --skip-column-names joomla)
+          package_count="$("${MYSQL[@]}" -e "SELECT COUNT(*) FROM doc_extensions WHERE type='package' AND element='pkg_decarodocuments';")"
+          component_count="$("${MYSQL[@]}" -e "SELECT COUNT(*) FROM doc_extensions WHERE type='component' AND element='com_decarodocuments';")"
+          echo "package_count=${package_count} component_count=${component_count}"
+          test "$package_count" = '0'
+          test "$component_count" = '0'
+          test ! -d administrator/components/com_decarodocuments
+          test ! -e administrator/manifests/packages/decarodocuments.xml
       - name: Install or repair Documents
+        if: matrix.mode != 'missing-core'
         shell: bash
         run: |
           set -euo pipefail
@@ -104,9 +133,11 @@ jobs:
           VERSION="$(tr -d '\r\n' < "$GITHUB_WORKSPACE/VERSION")"
           php cli/joomla.php extension:install --path="$GITHUB_WORKSPACE/dist/pkg_decarodocuments_${VERSION}.zip" -vvv
       - name: Verify Documents schema
+        if: matrix.mode != 'missing-core'
         shell: bash
         run: |
           set -euo pipefail
+          VERSION="$(tr -d '\r\n' < "$GITHUB_WORKSPACE/VERSION")"
           MYSQL=(mysql --protocol=TCP -h127.0.0.1 -uroot --batch --skip-column-names joomla)
           for table in doc_decarodocuments_documents doc_decarodocuments_relations; do
             count="$("${MYSQL[@]}" -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='joomla' AND table_name='${table}';")"
@@ -115,4 +146,4 @@ jobs:
           done
           schema="$("${MYSQL[@]}" -e "SELECT s.version_id FROM doc_schemas s JOIN doc_extensions e ON e.extension_id=s.extension_id WHERE e.type='component' AND e.element='com_decarodocuments' LIMIT 1;")"
           echo "documents_schema=${schema}"
-          test "$schema" = '1.2.1'
+          test "$schema" = "$VERSION"

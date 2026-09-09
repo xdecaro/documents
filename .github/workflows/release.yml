@@ -34,7 +34,7 @@ jobs:
           fi
       - name: PHP syntax
         run: find component package tests -name '*.php' -print0 | xargs -0 -n1 php -l
-      - name: Validate source and SQL repair boundary
+      - name: Validate source and installer boundary
         run: python3 build/validate.py && php tests/smoke.php
       - name: Build
         run: python3 build/build.py
@@ -52,6 +52,7 @@ jobs:
           grep -q "${SHA}  pkg_decarodocuments_${VERSION}.zip" dist/SHA256SUMS.txt
           unzip -p "dist/com_decarodocuments_${VERSION}.zip" decarodocuments.xml | grep -F 'charset="utf8"'
           unzip -l "dist/com_decarodocuments_${VERSION}.zip" | grep -F "admin/sql/updates/mysql/${VERSION}.sql"
+          unzip -p "dist/pkg_decarodocuments_${VERSION}.zip" script.php | grep -F 'final class pkg_decarodocumentsInstallerScript'
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +64,7 @@ jobs:
             "dist/pkg_decarodocuments_${VERSION}.zip" \
             "dist/SHA256SUMS.txt" \
             --title "Documents by xdecaro ${VERSION}" \
-            --notes "Documents by xdecaro ${VERSION}: Joomla SQL manifest compatibility fix and non-destructive schema repair for clean installs and affected 1.2.0 upgrades. Public Documents relation APIs, storage behavior and stable Joomla identities are unchanged."
+            --notes "Documents by xdecaro ${VERSION}: fixes the mandatory Core 1.3.0+ package preflight so Joomla loads the installer class and rejects installation atomically when Core is absent. No document-domain, public API, storage or database schema behavior changes."
       - name: Publish update-feed checksum
         shell: bash
         run: |

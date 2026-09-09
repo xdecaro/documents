@@ -2,7 +2,7 @@
 
 Documents by xdecaro is the reusable document-management component for the xdecaro Joomla ecosystem.
 
-Version 1.1.0 keeps the stable 1.0.0 document-management baseline and migrates its mandatory Core integration to Core by xdecaro 1.3.0+ and the canonical `xdecaro\Core` namespace.
+Version 1.2.2 preserves the existing Documents 1.2 feature set and fixes enforcement of its mandatory Core by xdecaro 1.3.0+ installation requirement on real Joomla 5/6 installations.
 
 Main capabilities remain unchanged:
 
@@ -12,7 +12,7 @@ Main capabilities remain unchanged:
 - Joomla ACL, CSRF-aware form handling and access levels;
 - stable document UUIDs and SHA-256 file integrity metadata;
 - document-owned relationship storage for cross-product integrations;
-- mandatory Core by xdecaro 1.3.0+ for shared Web Asset Manager UI primitives;
+- mandatory Core by xdecaro 1.3.0+ for shared infrastructure and UI primitives;
 - no duplicated local design system.
 
 Technical identifiers remain stable:
