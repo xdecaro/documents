@@ -336,12 +336,26 @@ final class DocumentModel extends AdminModel
 
     protected function canDelete($record): bool
     {
-        return Factory::getApplication()->getIdentity()->authorise('core.delete', 'com_decarodocuments');
+        $identity = Factory::getApplication()->getIdentity();
+
+        if (!$identity->authorise('core.delete', 'com_decarodocuments')) {
+            return false;
+        }
+
+        return $identity->authorise('core.admin', 'com_decarodocuments')
+            || in_array((int) ($record->access ?? 0), $identity->getAuthorisedViewLevels(), true);
     }
 
     protected function canEditState($record): bool
     {
-        return Factory::getApplication()->getIdentity()->authorise('core.edit.state', 'com_decarodocuments');
+        $identity = Factory::getApplication()->getIdentity();
+
+        if (!$identity->authorise('core.edit.state', 'com_decarodocuments')) {
+            return false;
+        }
+
+        return $identity->authorise('core.admin', 'com_decarodocuments')
+            || in_array((int) ($record->access ?? 0), $identity->getAuthorisedViewLevels(), true);
     }
 
     private function removeNewBlob(string $storedName): void
