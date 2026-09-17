@@ -160,7 +160,7 @@ def validate_source() -> None:
     repair_schema = (ROOT / 'component/admin/sql/updates/mysql/1.2.1.sql').read_text(encoding='utf-8')
     for schema, label in ((install_schema, 'Database schema'), (repair_schema, '1.2.1 repair schema')):
         require_markers(schema, ('CREATE TABLE IF NOT EXISTS `#__decarodocuments_documents`', 'CREATE TABLE IF NOT EXISTS `#__decarodocuments_relations`', 'FOREIGN KEY (`document_id`)', 'target_component', 'DEFAULT CHARSET=utf8mb4'), label)
-        if re.search(r'FOREIGN KEY.*target_', schema, re.I | re.S):
+        if re.search(r'FOREIGN\s+KEY\s*\(\s*`?target_', schema, re.I):
             fail('Cross-product target columns must not have foreign keys')
 
     require_markers(install_schema, ('#__decarodocuments_versions', '#__decarodocuments_audit', 'lifecycle_status', 'confidentiality', 'current_version'), '1.4 install schema')
