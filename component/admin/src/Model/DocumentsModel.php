@@ -83,6 +83,19 @@ final class DocumentsModel extends ListModel
             ->leftJoin($db->quoteName('#__viewlevels', 'ag') . ' ON ' . $db->quoteName('ag.id') . ' = ' . $db->quoteName('d.access'))
             ->leftJoin($db->quoteName('#__users', 'u') . ' ON ' . $db->quoteName('u.id') . ' = ' . $db->quoteName('d.created_by'));
 
+        $identity = Factory::getApplication()->getIdentity();
+        if (!$identity->authorise('core.admin', 'com_decarodocuments')) {
+            $viewLevels = array_values(array_unique(array_filter(
+                array_map('intval', (array) $identity->getAuthorisedViewLevels()),
+                static fn (int $id): bool => $id > 0
+            )));
+            if ($viewLevels === []) {
+                $query->where('1 = 0');
+            } else {
+                $query->where($db->quoteName('d.access') . ' IN (' . implode(',', $viewLevels) . ')');
+            }
+        }
+
         $search = trim((string) $this->getState('filter.search'));
         if ($search !== '') {
             if (str_starts_with($search, 'id:') && ctype_digit(substr($search, 3))) {
