@@ -23,6 +23,12 @@ final class HtmlView extends BaseHtmlView
         $isNew = empty($this->item->id);
         $permission = $isNew ? 'core.create' : 'core.edit';
 
+        if (!$isNew
+            && !$user->authorise('core.admin', 'com_decarodocuments')
+            && !in_array((int) $this->item->access, $user->getAuthorisedViewLevels(), true)) {
+            throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
         if (!$user->authorise($permission, 'com_decarodocuments')) {
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
