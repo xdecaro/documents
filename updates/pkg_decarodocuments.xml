@@ -1,22 +1,22 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <updates>
   <update>
     <name>Documents by xdecaro</name>
-    <description>Secure reusable document management for Joomla.</description>
+    <description>Secure reusable document management for Joomla 6.</description>
     <element>pkg_decarodocuments</element>
     <type>package</type>
     <client>site</client>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
     <downloads>
-      <downloadurl type="full" format="zip">https://github.com/xdecaro/documents/releases/download/v1.3.0/pkg_decarodocuments_1.3.0.zip</downloadurl>
+      <downloadurl type="full" format="zip">https://github.com/xdecaro/documents/releases/download/v1.4.0/pkg_decarodocuments_1.4.0.zip</downloadurl>
     </downloads>
     <tags>
       <tag>stable</tag>
     </tags>
-    <sha256>585cfb06fa3784ca0944e0ca9cd0aea7f1dd46816b3f98a812448a5704bbb75f</sha256>
+    <sha256></sha256>
     <maintainer>Luca De Caro</maintainer>
     <maintainerurl>https://github.com/xdecaro/documents</maintainerurl>
-    <targetplatform name="joomla" version="(5|6)\.[0-9]+" />
-    <php_minimum>8.1.0</php_minimum>
+    <targetplatform name="joomla" version="6\.[0-9]+" />
+    <php_minimum>8.3.0</php_minimum>
   </update>
 </updates>
