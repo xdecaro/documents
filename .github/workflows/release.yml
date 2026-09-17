@@ -56,7 +56,7 @@ jobs:
             "dist/pkg_decarodocuments_${VERSION}.zip" \
             "dist/SHA256SUMS.txt" \
             --title "Documents by xdecaro ${VERSION}" \
-            --notes "Documents ${VERSION}: optional Notifications and Tasks bridges through public services plus an ACL-protected Analytics provider. Preserves the Core 1.3.0+ dependency, private storage, relation API and all document data."
+            --notes "Documents ${VERSION}: Joomla 6 document lifecycle, immutable file-version history, protected historical downloads, audit records, lifecycle search/filters and non-destructive upgrade from 1.3.0. Preserves private storage, ACL, Core integration and existing document data."
       - name: Publish update-feed checksum
         run: |
           set -euo pipefail
