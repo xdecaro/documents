@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.0 - 2026-09-18
+
+- Added generic document lifecycle metadata: document type, lifecycle status, confidentiality, reference, document/validity/expiry dates and Joomla content language.
+- Added immutable file-version history. Replacing a file now creates a new stored version instead of deleting the previous file.
+- Added protected historical-version downloads with the same Joomla ACL/access-level enforcement as current downloads.
+- Added document activity auditing for create, metadata update, new version, current-version download, historical-version download and deletion.
+- Added non-destructive schema migration from 1.3.0, including automatic version-1 records for existing stored documents.
+- Added administrator search and filters for lifecycle/confidentiality plus lifecycle-aware badges, version number and expiry visibility.
+- Expanded Information/Diagnostics with current installed version, version/audit tables, stored-version count and documents expiring within 30 days.
+- Preserved the generic cross-product relation API and optional Notifications, Tasks and Analytics integrations without direct external-table access.
+- Target is now Joomla 6 only; package/update metadata and CI are aligned accordingly.
+- No ENS-specific business rules were added to Documents: consuming components remain responsible for why a document is required.
+
 ## 1.3.0 - 2026-09-09
 
 - Added optional public-service bridges from Documents to Notifications and Tasks without cross-product database access.
