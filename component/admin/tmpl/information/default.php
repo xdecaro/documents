@@ -4,10 +4,13 @@ defined('_JEXEC') or die;
 use Joomla\CMS\Language\Text;
 
 $info = $this->info;
+$databaseHealthy = !empty($info['documents_table'])
+    && !empty($info['relations_table'])
+    && !empty($info['versions_table'])
+    && !empty($info['audit_table']);
 $healthy = !empty($info['core_compatible'])
     && !empty($info['core_api'])
-    && !empty($info['documents_table'])
-    && !empty($info['relations_table'])
+    && $databaseHealthy
     && !empty($info['storage_ready']);
 ?>
 <div class="xdecaro-scope">
@@ -30,6 +33,8 @@ $healthy = !empty($info['core_compatible'])
                         <dt class="col-5"><?= Text::_('COM_DECARODOCUMENTS_COMPONENT_ID'); ?></dt><dd class="col-7"><code><?= $this->escape((string) $info['component_id']); ?></code></dd>
                         <dt class="col-5"><?= Text::_('COM_DECARODOCUMENTS_PACKAGE_ID'); ?></dt><dd class="col-7"><code><?= $this->escape((string) $info['package_id']); ?></code></dd>
                         <dt class="col-5"><?= Text::_('COM_DECARODOCUMENTS_DOCUMENT_COUNT'); ?></dt><dd class="col-7"><?= (int) $info['document_count']; ?></dd>
+                        <dt class="col-5"><?= Text::_('COM_DECARODOCUMENTS_VERSION_COUNT'); ?></dt><dd class="col-7"><?= (int) $info['version_count']; ?></dd>
+                        <dt class="col-5"><?= Text::_('COM_DECARODOCUMENTS_EXPIRING_COUNT'); ?></dt><dd class="col-7"><?= (int) $info['expiring_count']; ?></dd>
                     </dl>
                 </div>
             </section>
@@ -46,9 +51,16 @@ $healthy = !empty($info['core_compatible'])
                         <dt class="col-6">Joomla</dt><dd class="col-6"><?= $this->escape((string) $info['joomla_version']); ?></dd>
                         <dt class="col-6">PHP</dt><dd class="col-6"><?= $this->escape((string) $info['php_version']); ?></dd>
                         <dt class="col-6">Core by xdecaro</dt><dd class="col-6"><?= $this->escape((string) ($info['core_version'] ?: '—')); ?></dd>
-                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_CORE_API'); ?></dt><dd class="col-6"><span class="xdecaro-badge <?= !empty($info['core_api']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['core_api']) ? 'JYES' : 'JNO'); ?></span></dd>
-                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_DATABASE'); ?></dt><dd class="col-6"><span class="xdecaro-badge <?= !empty($info['documents_table']) && !empty($info['relations_table']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['documents_table']) && !empty($info['relations_table']) ? 'COM_DECARODOCUMENTS_ALIGNED' : 'COM_DECARODOCUMENTS_CHECK_REQUIRED'); ?></span></dd>
-                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_PRIVATE_STORAGE'); ?></dt><dd class="col-6"><span class="xdecaro-badge <?= !empty($info['storage_ready']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['storage_ready']) ? 'COM_DECARODOCUMENTS_READY' : 'COM_DECARODOCUMENTS_CHECK_REQUIRED'); ?></span></dd>
+                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_CORE_API'); ?></dt>
+                        <dd class="col-6"><span class="xdecaro-badge <?= !empty($info['core_api']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['core_api']) ? 'JYES' : 'JNO'); ?></span></dd>
+                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_DATABASE'); ?></dt>
+                        <dd class="col-6"><span class="xdecaro-badge <?= $databaseHealthy ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_($databaseHealthy ? 'COM_DECARODOCUMENTS_ALIGNED' : 'COM_DECARODOCUMENTS_CHECK_REQUIRED'); ?></span></dd>
+                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_VERSIONS_TABLE'); ?></dt>
+                        <dd class="col-6"><span class="xdecaro-badge <?= !empty($info['versions_table']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['versions_table']) ? 'JYES' : 'JNO'); ?></span></dd>
+                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_AUDIT_TABLE'); ?></dt>
+                        <dd class="col-6"><span class="xdecaro-badge <?= !empty($info['audit_table']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['audit_table']) ? 'JYES' : 'JNO'); ?></span></dd>
+                        <dt class="col-6"><?= Text::_('COM_DECARODOCUMENTS_PRIVATE_STORAGE'); ?></dt>
+                        <dd class="col-6"><span class="xdecaro-badge <?= !empty($info['storage_ready']) ? 'xdecaro-badge--success' : 'xdecaro-badge--warning'; ?>"><?= Text::_(!empty($info['storage_ready']) ? 'COM_DECARODOCUMENTS_READY' : 'COM_DECARODOCUMENTS_CHECK_REQUIRED'); ?></span></dd>
                     </dl>
                 </div>
             </section>

@@ -3,6 +3,15 @@ CREATE TABLE IF NOT EXISTS `#__decarodocuments_documents` (
   `uuid` char(36) NOT NULL,
   `title` varchar(255) NOT NULL,
   `description` text NULL,
+  `document_type` varchar(64) NOT NULL DEFAULT 'generic',
+  `lifecycle_status` varchar(32) NOT NULL DEFAULT 'draft',
+  `confidentiality` varchar(32) NOT NULL DEFAULT 'internal',
+  `reference_code` varchar(191) NOT NULL DEFAULT '',
+  `document_date` date NULL DEFAULT NULL,
+  `valid_from` date NULL DEFAULT NULL,
+  `expires_at` datetime NULL DEFAULT NULL,
+  `language` varchar(7) NOT NULL DEFAULT '*',
+  `current_version` int unsigned NOT NULL DEFAULT 1,
   `original_name` varchar(255) NOT NULL DEFAULT '',
   `stored_name` varchar(64) NOT NULL DEFAULT '',
   `mime_type` varchar(127) NOT NULL DEFAULT '',
@@ -17,8 +26,36 @@ CREATE TABLE IF NOT EXISTS `#__decarodocuments_documents` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_documents_uuid` (`uuid`),
   KEY `idx_documents_state_access` (`state`, `access`),
+  KEY `idx_documents_lifecycle` (`lifecycle_status`),
+  KEY `idx_documents_type` (`document_type`),
+  KEY `idx_documents_confidentiality` (`confidentiality`),
+  KEY `idx_documents_expiry` (`expires_at`),
+  KEY `idx_documents_language` (`language`),
   KEY `idx_documents_created` (`created`),
   KEY `idx_documents_sha256` (`sha256`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__decarodocuments_versions` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `document_id` int unsigned NOT NULL,
+  `version_number` int unsigned NOT NULL,
+  `version_uuid` char(36) NOT NULL,
+  `original_name` varchar(255) NOT NULL DEFAULT '',
+  `stored_name` varchar(64) NOT NULL DEFAULT '',
+  `mime_type` varchar(127) NOT NULL DEFAULT '',
+  `file_size` bigint unsigned NOT NULL DEFAULT 0,
+  `sha256` char(64) NOT NULL DEFAULT '',
+  `note` varchar(500) NOT NULL DEFAULT '',
+  `is_current` tinyint(1) NOT NULL DEFAULT 0,
+  `created` datetime NOT NULL,
+  `created_by` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_document_version_number` (`document_id`, `version_number`),
+  UNIQUE KEY `idx_document_version_uuid` (`version_uuid`),
+  UNIQUE KEY `idx_document_version_stored` (`stored_name`),
+  KEY `idx_document_version_current` (`document_id`, `is_current`),
+  CONSTRAINT `fk_decarodocuments_version_document`
+    FOREIGN KEY (`document_id`) REFERENCES `#__decarodocuments_documents` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `#__decarodocuments_relations` (
@@ -34,4 +71,20 @@ CREATE TABLE IF NOT EXISTS `#__decarodocuments_relations` (
   KEY `idx_relation_target` (`target_component`, `target_entity`, `target_id`),
   CONSTRAINT `fk_decarodocuments_relation_document`
     FOREIGN KEY (`document_id`) REFERENCES `#__decarodocuments_documents` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__decarodocuments_audit` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `document_id` int unsigned NULL DEFAULT NULL,
+  `document_uuid` char(36) NOT NULL,
+  `version_id` bigint unsigned NULL DEFAULT NULL,
+  `action` varchar(64) NOT NULL,
+  `actor_user_id` int unsigned NOT NULL DEFAULT 0,
+  `context_json` text NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_document_uuid` (`document_uuid`),
+  KEY `idx_audit_document_id` (`document_id`),
+  KEY `idx_audit_action` (`action`),
+  KEY `idx_audit_created` (`created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;

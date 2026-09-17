@@ -27,7 +27,7 @@ final class RelationService
     {
         $this->assertPermission('core.edit');
         [$documentId, $target, $type] = $this->normaliseRelation($relation);
-        $this->assertDocumentExists($documentId);
+        $this->assertDocumentAccess($documentId);
 
         if ($this->relationExists($documentId, $target, $type)) {
             return;
@@ -67,6 +67,7 @@ final class RelationService
     {
         $this->assertPermission('core.edit');
         [$documentId, $target, $type] = $this->normaliseRelation($relation);
+        $this->assertDocumentAccess($documentId);
 
         $query = $this->db->getQuery(true)
             ->delete($this->db->quoteName('#__decarodocuments_relations'))
@@ -97,6 +98,8 @@ final class RelationService
         $this->assertPermission('core.manage');
         $relationType = $relationType === null ? null : $this->normaliseRelationType($relationType);
 
+        $identity = Factory::getApplication()->getIdentity();
+
         $query = $this->db->getQuery(true)
             ->select([
                 'd.' . $this->db->quoteName('id'),
@@ -119,8 +122,20 @@ final class RelationService
             ->where('r.' . $this->db->quoteName('target_id') . ' = :targetId')
             ->bind(':component', $target->getComponent())
             ->bind(':entity', $target->getEntity())
-            ->bind(':targetId', $target->getId())
-            ->order('d.' . $this->db->quoteName('id') . ' DESC');
+            ->bind(':targetId', $target->getId());
+
+        if (!$identity->authorise('core.admin', CoreIntegrationService::COMPONENT)) {
+            $viewLevels = array_values(array_unique(array_filter(
+                array_map('intval', (array) $identity->getAuthorisedViewLevels()),
+                static fn (int $id): bool => $id > 0
+            )));
+            if ($viewLevels === []) {
+                return [];
+            }
+            $query->where('d.' . $this->db->quoteName('access') . ' IN (' . implode(',', $viewLevels) . ')');
+        }
+
+        $query->order('d.' . $this->db->quoteName('id') . ' DESC');
 
         if ($relationType !== null) {
             $query->where('r.' . $this->db->quoteName('relation_type') . ' = :relationType')
@@ -157,16 +172,23 @@ final class RelationService
         return $relationType;
     }
 
-    private function assertDocumentExists(int $documentId): void
+    private function assertDocumentAccess(int $documentId): void
     {
         $query = $this->db->getQuery(true)
-            ->select('COUNT(*)')
+            ->select($this->db->quoteName('access'))
             ->from($this->db->quoteName('#__decarodocuments_documents'))
             ->where($this->db->quoteName('id') . ' = :documentId')
             ->bind(':documentId', $documentId, ParameterType::INTEGER);
 
-        if ((int) $this->db->setQuery($query)->loadResult() !== 1) {
+        $access = $this->db->setQuery($query, 0, 1)->loadResult();
+        if ($access === null) {
             throw new RuntimeException('The referenced Documents record does not exist.');
+        }
+
+        $identity = Factory::getApplication()->getIdentity();
+        if (!$identity->authorise('core.admin', CoreIntegrationService::COMPONENT)
+            && !in_array((int) $access, $identity->getAuthorisedViewLevels(), true)) {
+            throw new RuntimeException('Not authorised to manage this Documents record.', 403);
         }
     }
 

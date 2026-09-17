@@ -3,6 +3,7 @@ namespace Xdecaro\Component\Decarodocuments\Administrator\Model;
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Version;
 use Xdecaro\Component\Decarodocuments\Administrator\Service\StorageService;
@@ -13,12 +14,27 @@ final class InformationModel extends BaseDatabaseModel
     {
         $db = $this->getDatabase();
         $tables = array_flip($db->getTableList());
+
         $documentsTable = $db->replacePrefix('#__decarodocuments_documents');
         $relationsTable = $db->replacePrefix('#__decarodocuments_relations');
-        $count = 0;
+        $versionsTable = $db->replacePrefix('#__decarodocuments_versions');
+        $auditTable = $db->replacePrefix('#__decarodocuments_audit');
+
+        $documentCount = $this->countTable($documentsTable, '#__decarodocuments_documents', $tables);
+        $versionCount = $this->countTable($versionsTable, '#__decarodocuments_versions', $tables);
+        $expiringCount = 0;
 
         if (isset($tables[$documentsTable])) {
-            $count = (int) $db->setQuery($db->getQuery(true)->select('COUNT(*)')->from($db->quoteName('#__decarodocuments_documents')))->loadResult();
+            $now = Factory::getDate()->toSql();
+            $until = Factory::getDate('+30 days')->toSql();
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__decarodocuments_documents'))
+                ->where($db->quoteName('state') . ' >= 0')
+                ->where($db->quoteName('expires_at') . ' IS NOT NULL')
+                ->where($db->quoteName('expires_at') . ' >= ' . $db->quote($now))
+                ->where($db->quoteName('expires_at') . ' <= ' . $db->quote($until));
+            $expiringCount = (int) $db->setQuery($query)->loadResult();
         }
 
         $storage = new StorageService();
@@ -28,7 +44,7 @@ final class InformationModel extends BaseDatabaseModel
             && class_exists(\xdecaro\Core\Asset\AssetService::class);
 
         return [
-            'version' => '1.1.0',
+            'version' => $this->getInstalledVersion(),
             'joomla_version' => (new Version())->getShortVersion(),
             'php_version' => PHP_VERSION,
             'core_version' => $coreVersion,
@@ -36,11 +52,44 @@ final class InformationModel extends BaseDatabaseModel
             'core_api' => $coreApi,
             'documents_table' => isset($tables[$documentsTable]),
             'relations_table' => isset($tables[$relationsTable]),
-            'document_count' => $count,
+            'versions_table' => isset($tables[$versionsTable]),
+            'audit_table' => isset($tables[$auditTable]),
+            'document_count' => $documentCount,
+            'version_count' => $versionCount,
+            'expiring_count' => $expiringCount,
             'storage_ready' => $storage->isReady(),
             'storage_location' => 'private-outside-web-root',
             'component_id' => 'com_decarodocuments',
             'package_id' => 'pkg_decarodocuments',
         ];
+    }
+
+    private function countTable(string $physicalName, string $logicalName, array $tables): int
+    {
+        if (!isset($tables[$physicalName])) {
+            return 0;
+        }
+
+        $db = $this->getDatabase();
+
+        return (int) $db->setQuery(
+            $db->getQuery(true)->select('COUNT(*)')->from($db->quoteName($logicalName))
+        )->loadResult();
+    }
+
+    private function getInstalledVersion(): string
+    {
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('manifest_cache'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_decarodocuments'));
+
+        $manifest = json_decode((string) $db->setQuery($query, 0, 1)->loadResult(), true);
+
+        return is_array($manifest) && !empty($manifest['version'])
+            ? (string) $manifest['version']
+            : '—';
     }
 }

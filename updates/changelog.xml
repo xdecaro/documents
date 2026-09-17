@@ -3,6 +3,24 @@
   <changelog>
     <element>pkg_decarodocuments</element>
     <type>package</type>
+    <version>1.4.0</version>
+    <note>Added generic lifecycle metadata, immutable file-version history, protected historical downloads, document auditing, lifecycle search/filters and expanded diagnostics. Joomla 6 only.</note>
+  </changelog>
+  <changelog>
+    <element>pkg_decarodocuments</element>
+    <type>package</type>
+    <version>1.3.0</version>
+    <note>Added optional Notifications and Tasks public-service bridges plus an ACL-protected Analytics provider.</note>
+  </changelog>
+  <changelog>
+    <element>pkg_decarodocuments</element>
+    <type>package</type>
+    <version>1.2.2</version>
+    <note>Fixed mandatory Core package preflight on real Joomla installations.</note>
+  </changelog>
+  <changelog>
+    <element>pkg_decarodocuments</element>
+    <type>package</type>
     <version>1.1.0</version>
     <note>Core integration migrated to canonical xdecaro\Core APIs with mandatory Core by xdecaro 1.3.0+; Joomla identifiers, database schema and document behavior remain unchanged.</note>
   </changelog>
@@ -10,6 +28,6 @@
     <element>pkg_decarodocuments</element>
     <type>package</type>
     <version>1.0.0</version>
-    <note>First stable Documents by xdecaro release with secure private storage, administrator CRUD, Core by xdecaro 1.1+ UI integration and cross-product relation storage.</note>
+    <note>First stable Documents by xdecaro release with secure private storage, administrator CRUD, Core UI integration and cross-product relation storage.</note>
   </changelog>
 </changelogs>
