@@ -28,7 +28,7 @@ def require_markers(text: str, markers: tuple[str, ...], label: str) -> None:
 
 
 def validate_source() -> None:
-    if VERSION != '1.3.0':
+    if VERSION != '1.4.0':
         fail(f'Unexpected release version {VERSION!r}')
 
     component = ROOT / 'component/decarodocuments.xml'
@@ -40,6 +40,9 @@ def validate_source() -> None:
             fail(f'{path.relative_to(ROOT)} version does not match VERSION')
 
     component_root = ET.parse(component).getroot()
+    component_target = component_root.find('targetplatform')
+    if component_target is None or (component_target.get('name') or '') != 'joomla' or (component_target.get('version') or '') != '6.*':
+        fail('Component must target Joomla 6 only')
     install_sql = component_root.find('./install/sql/file')
     if install_sql is None or (install_sql.get('driver') or '') != 'mysql' or (install_sql.get('charset') or '') != 'utf8':
         fail('Joomla install SQL manifest must use driver="mysql" charset="utf8"')
@@ -47,6 +50,9 @@ def validate_source() -> None:
         fail('Component install SQL path changed unexpectedly')
 
     package_root = ET.parse(package).getroot()
+    package_target = package_root.find('targetplatform')
+    if package_target is None or (package_target.get('name') or '') != 'joomla' or (package_target.get('version') or '') != '6.*':
+        fail('Package must target Joomla 6 only')
     if (package_root.findtext('packagename') or '').strip() != 'decarodocuments':
         fail('Package name is not stable')
     children = {(node.get('type'), node.get('id'), node.get('group'), (node.text or '').strip()) for node in package_root.findall('./files/file')}
@@ -76,11 +82,13 @@ def validate_source() -> None:
         'component/admin/sql/updates/mysql/1.0.0.sql', 'component/admin/sql/updates/mysql/1.1.0.sql',
         'component/admin/sql/updates/mysql/1.2.0.sql', 'component/admin/sql/updates/mysql/1.2.1.sql',
         'component/admin/sql/updates/mysql/1.2.2.sql', 'component/admin/sql/updates/mysql/1.3.0.sql',
+        'component/admin/sql/updates/mysql/1.4.0.sql',
         'component/admin/src/Controller/DocumentController.php', 'component/admin/src/Extension/DecarodocumentsComponent.php',
         'component/admin/src/Helper/CoreUiHelper.php', 'component/admin/src/Model/DocumentModel.php',
         'component/admin/src/Model/DocumentsModel.php', 'component/admin/src/Model/InformationModel.php',
         'component/admin/src/Service/CoreIntegrationService.php', 'component/admin/src/Service/RelationService.php',
-        'component/admin/src/Service/StorageService.php', 'component/admin/src/Service/AnalyticsSourceService.php',
+        'component/admin/src/Service/StorageService.php', 'component/admin/src/Service/AuditService.php',
+        'component/admin/src/Service/AnalyticsSourceService.php',
         'component/admin/src/Service/CrossProductIntegrationService.php', 'component/admin/src/Table/DocumentTable.php',
         'component/admin/tmpl/document/edit.php', 'component/admin/tmpl/documents/default.php',
         'component/admin/tmpl/information/default.php', 'package/script.php',
@@ -131,15 +139,18 @@ def validate_source() -> None:
     if '#__decarodocuments_' in analytics_provider:
         fail('Analytics plugin must delegate to the Documents-owned source service')
 
+    audit = (ROOT / 'component/admin/src/Service/AuditService.php').read_text(encoding='utf-8')
+    require_markers(audit, ('#__decarodocuments_audit', 'actor_user_id', 'context_json', 'record('), 'Audit service')
+
     storage = (ROOT / 'component/admin/src/Service/StorageService.php').read_text(encoding='utf-8')
     require_markers(storage, ('dirname(JPATH_ROOT)', 'is_uploaded_file', 'FILEINFO_MIME_TYPE', 'move_uploaded_file', "hash_file('sha256'", 'MAX_FILE_SIZE'), 'Storage security')
     if 'JPATH_ROOT . DIRECTORY_SEPARATOR' in storage:
         fail('Private storage must not be rooted inside the Joomla public root')
 
     model = (ROOT / 'component/admin/src/Model/DocumentModel.php').read_text(encoding='utf-8')
-    require_markers(model, ("authorise('core.edit.state'", 'random_bytes(16)', 'storeUploadedFile', 'parent::save'), 'Document save security')
+    require_markers(model, ("authorise('core.edit.state'", 'random_bytes(16)', 'storeUploadedFile', 'parent::save', '#__decarodocuments_versions', 'new_version', 'getVersions'), 'Document save security')
     controller = (ROOT / 'component/admin/src/Controller/DocumentController.php').read_text(encoding='utf-8')
-    require_markers(controller, ("authorise('core.manage'", 'getAuthorisedViewLevels', 'X-Content-Type-Options', 'Content-Disposition'), 'Download authorization')
+    require_markers(controller, ("authorise('core.manage'", 'getAuthorisedViewLevels', 'X-Content-Type-Options', 'Content-Disposition', 'downloadVersion', 'version_downloaded'), 'Download authorization')
 
     for rel in ('component/admin/tmpl/document/edit.php', 'component/admin/tmpl/documents/default.php'):
         text = (ROOT / rel).read_text(encoding='utf-8')
@@ -151,6 +162,12 @@ def validate_source() -> None:
         require_markers(schema, ('CREATE TABLE IF NOT EXISTS `#__decarodocuments_documents`', 'CREATE TABLE IF NOT EXISTS `#__decarodocuments_relations`', 'FOREIGN KEY (`document_id`)', 'target_component', 'DEFAULT CHARSET=utf8mb4'), label)
         if re.search(r'FOREIGN KEY.*target_', schema, re.I | re.S):
             fail('Cross-product target columns must not have foreign keys')
+
+    require_markers(install_schema, ('#__decarodocuments_versions', '#__decarodocuments_audit', 'lifecycle_status', 'confidentiality', 'current_version'), '1.4 install schema')
+    migration_140 = (ROOT / 'component/admin/sql/updates/mysql/1.4.0.sql').read_text(encoding='utf-8')
+    require_markers(migration_140, ('ALTER TABLE `#__decarodocuments_documents`', 'CREATE TABLE IF NOT EXISTS `#__decarodocuments_versions`', 'CREATE TABLE IF NOT EXISTS `#__decarodocuments_audit`', 'INSERT INTO `#__decarodocuments_versions`'), '1.4 migration')
+    if re.search(r'\b(?:DROP\s+TABLE|TRUNCATE\s+TABLE)\b', migration_140, re.I):
+        fail('1.4 migration must not destroy document data')
 
     for marker_name in ('1.2.2.sql', '1.3.0.sql'):
         marker = (ROOT / 'component/admin/sql/updates/mysql' / marker_name).read_text(encoding='utf-8')
@@ -180,7 +197,7 @@ def validate_dist() -> None:
 
     with zipfile.ZipFile(component_zip) as archive:
         names = set(archive.namelist())
-        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/RelationService.php', 'admin/src/Service/AnalyticsSourceService.php', 'admin/src/Service/CrossProductIntegrationService.php', 'admin/tmpl/documents/default.php', f'admin/sql/updates/mysql/{VERSION}.sql'):
+        for required in ('decarodocuments.xml', 'admin/services/provider.php', 'admin/src/Extension/DecarodocumentsComponent.php', 'admin/src/Service/StorageService.php', 'admin/src/Service/AuditService.php', 'admin/src/Service/RelationService.php', 'admin/src/Service/AnalyticsSourceService.php', 'admin/src/Service/CrossProductIntegrationService.php', 'admin/tmpl/documents/default.php', f'admin/sql/updates/mysql/{VERSION}.sql'):
             if required not in names:
                 fail(f'Component ZIP missing {required}')
 
