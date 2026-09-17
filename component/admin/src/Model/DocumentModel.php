@@ -128,11 +128,24 @@ final class DocumentModel extends AdminModel
         $versionNote = trim((string) ($data['version_note'] ?? ''));
         unset($data['version_note']);
 
+        if (!$user->authorise('core.admin', 'com_decarodocuments')) {
+            $requestedAccess = (int) ($data['access'] ?? 0);
+            if ($requestedAccess <= 0 || !in_array($requestedAccess, $user->getAuthorisedViewLevels(), true)) {
+                $this->setError(Text::_('JERROR_ALERTNOAUTHOR'));
+                return false;
+            }
+        }
+
         $id = (int) ($data['id'] ?? 0);
         $table = $this->getTable();
         $currentVersion = 0;
 
         if ($id > 0 && $table->load($id)) {
+            if (!$user->authorise('core.admin', 'com_decarodocuments')
+                && !in_array((int) $table->access, $user->getAuthorisedViewLevels(), true)) {
+                $this->setError(Text::_('JERROR_ALERTNOAUTHOR'));
+                return false;
+            }
             $currentVersion = max(1, (int) ($table->current_version ?? 1));
 
             if (empty($data['uuid'])) {
