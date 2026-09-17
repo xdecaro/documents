@@ -39,6 +39,11 @@ def validate_source() -> None:
         if xml_version(path) != VERSION:
             fail(f'{path.relative_to(ROOT)} version does not match VERSION')
 
+    analytics_root = ET.parse(analytics_manifest).getroot()
+    analytics_target = analytics_root.find('targetplatform')
+    if analytics_target is None or (analytics_target.get('name') or '') != 'joomla' or (analytics_target.get('version') or '') != '6.*':
+        fail('Analytics adapter must target Joomla 6 only')
+
     component_root = ET.parse(component).getroot()
     component_target = component_root.find('targetplatform')
     if component_target is None or (component_target.get('name') or '') != 'joomla' or (component_target.get('version') or '') != '6.*':
