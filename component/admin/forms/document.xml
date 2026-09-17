@@ -5,7 +5,45 @@
     <field name="uuid" type="hidden" />
     <field name="title" type="text" label="COM_DECARODOCUMENTS_FIELD_TITLE" required="true" maxlength="255" filter="string" />
     <field name="description" type="textarea" label="COM_DECARODOCUMENTS_FIELD_DESCRIPTION" rows="6" filter="safehtml" />
+    <field name="document_type" type="list" label="COM_DECARODOCUMENTS_FIELD_DOCUMENT_TYPE" default="generic" filter="cmd">
+      <option value="generic">COM_DECARODOCUMENTS_TYPE_GENERIC</option>
+      <option value="identity">COM_DECARODOCUMENTS_TYPE_IDENTITY</option>
+      <option value="certificate">COM_DECARODOCUMENTS_TYPE_CERTIFICATE</option>
+      <option value="application">COM_DECARODOCUMENTS_TYPE_APPLICATION</option>
+      <option value="form">COM_DECARODOCUMENTS_TYPE_FORM</option>
+      <option value="resolution">COM_DECARODOCUMENTS_TYPE_RESOLUTION</option>
+      <option value="minutes">COM_DECARODOCUMENTS_TYPE_MINUTES</option>
+      <option value="financial">COM_DECARODOCUMENTS_TYPE_FINANCIAL</option>
+      <option value="contract">COM_DECARODOCUMENTS_TYPE_CONTRACT</option>
+      <option value="insurance">COM_DECARODOCUMENTS_TYPE_INSURANCE</option>
+      <option value="receipt">COM_DECARODOCUMENTS_TYPE_RECEIPT</option>
+      <option value="disciplinary">COM_DECARODOCUMENTS_TYPE_DISCIPLINARY</option>
+      <option value="other">COM_DECARODOCUMENTS_TYPE_OTHER</option>
+    </field>
+    <field name="reference_code" type="text" label="COM_DECARODOCUMENTS_FIELD_REFERENCE" maxlength="191" filter="string" />
+    <field name="document_date" type="calendar" label="COM_DECARODOCUMENTS_FIELD_DOCUMENT_DATE" format="%Y-%m-%d" showtime="false" filter="string" />
+    <field name="valid_from" type="calendar" label="COM_DECARODOCUMENTS_FIELD_VALID_FROM" format="%Y-%m-%d" showtime="false" filter="string" />
+    <field name="expires_at" type="calendar" label="COM_DECARODOCUMENTS_FIELD_EXPIRES_AT" showtime="true" translateformat="true" filter="user_utc" />
+    <field name="language" type="contentlanguage" label="JFIELD_LANGUAGE_LABEL" default="*" client="site">
+      <option value="*">JALL</option>
+    </field>
     <field name="upload" type="file" label="COM_DECARODOCUMENTS_FIELD_FILE" description="COM_DECARODOCUMENTS_FIELD_FILE_DESC" accept=".pdf,.jpg,.jpeg,.png,.txt,.csv,.docx,.xlsx,.odt,.ods" />
+    <field name="version_note" type="text" label="COM_DECARODOCUMENTS_FIELD_VERSION_NOTE" description="COM_DECARODOCUMENTS_FIELD_VERSION_NOTE_DESC" maxlength="500" filter="string" />
+    <field name="lifecycle_status" type="list" label="COM_DECARODOCUMENTS_FIELD_LIFECYCLE_STATUS" default="draft" filter="cmd">
+      <option value="draft">COM_DECARODOCUMENTS_STATUS_DRAFT</option>
+      <option value="review">COM_DECARODOCUMENTS_STATUS_REVIEW</option>
+      <option value="approval">COM_DECARODOCUMENTS_STATUS_APPROVAL</option>
+      <option value="approved">COM_DECARODOCUMENTS_STATUS_APPROVED</option>
+      <option value="published">COM_DECARODOCUMENTS_STATUS_PUBLISHED</option>
+      <option value="archived">COM_DECARODOCUMENTS_STATUS_ARCHIVED</option>
+      <option value="expired">COM_DECARODOCUMENTS_STATUS_EXPIRED</option>
+    </field>
+    <field name="confidentiality" type="list" label="COM_DECARODOCUMENTS_FIELD_CONFIDENTIALITY" default="internal" filter="cmd">
+      <option value="public">COM_DECARODOCUMENTS_CONFIDENTIALITY_PUBLIC</option>
+      <option value="internal">COM_DECARODOCUMENTS_CONFIDENTIALITY_INTERNAL</option>
+      <option value="confidential">COM_DECARODOCUMENTS_CONFIDENTIALITY_CONFIDENTIAL</option>
+      <option value="sensitive">COM_DECARODOCUMENTS_CONFIDENTIALITY_SENSITIVE</option>
+    </field>
     <field name="state" type="list" label="JSTATUS" default="1" filter="integer">
       <option value="1">JPUBLISHED</option>
       <option value="0">JUNPUBLISHED</option>
