@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <updates>
   <update>
     <name>Documents by xdecaro</name>
@@ -13,7 +13,7 @@
     <tags>
       <tag>stable</tag>
     </tags>
-    <sha256></sha256>
+    <sha256>95d719b669236e475c13b0b438e28355bd9d66f41c965bbe2ac6c0abccef60df</sha256>
     <maintainer>Luca De Caro</maintainer>
     <maintainerurl>https://github.com/xdecaro/documents</maintainerurl>
     <targetplatform name="joomla" version="6\.[0-9]+" />
