@@ -97,6 +97,8 @@ final class RelationService
         $this->assertPermission('core.manage');
         $relationType = $relationType === null ? null : $this->normaliseRelationType($relationType);
 
+        $identity = Factory::getApplication()->getIdentity();
+
         $query = $this->db->getQuery(true)
             ->select([
                 'd.' . $this->db->quoteName('id'),
@@ -119,8 +121,20 @@ final class RelationService
             ->where('r.' . $this->db->quoteName('target_id') . ' = :targetId')
             ->bind(':component', $target->getComponent())
             ->bind(':entity', $target->getEntity())
-            ->bind(':targetId', $target->getId())
-            ->order('d.' . $this->db->quoteName('id') . ' DESC');
+            ->bind(':targetId', $target->getId());
+
+        if (!$identity->authorise('core.admin', CoreIntegrationService::COMPONENT)) {
+            $viewLevels = array_values(array_unique(array_filter(
+                array_map('intval', (array) $identity->getAuthorisedViewLevels()),
+                static fn (int $id): bool => $id > 0
+            )));
+            if ($viewLevels === []) {
+                return [];
+            }
+            $query->where('d.' . $this->db->quoteName('access') . ' IN (' . implode(',', $viewLevels) . ')');
+        }
+
+        $query->order('d.' . $this->db->quoteName('id') . ' DESC');
 
         if ($relationType !== null) {
             $query->where('r.' . $this->db->quoteName('relation_type') . ' = :relationType')
